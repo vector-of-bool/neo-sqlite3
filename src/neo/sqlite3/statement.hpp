@@ -1,5 +1,6 @@
 #pragma once
 
+#include <neo/sqlite3/column_access.hpp>
 #include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/row_access.hpp>
 
@@ -114,6 +115,7 @@ public:
 class statement {
     friend class database;
     friend class row_access;
+    friend class column_access;
     friend class binding_access;
     friend class binding_access::binding;
 
@@ -166,6 +168,7 @@ public:
 
     row_access     row{*this};
     binding_access bindings{*this};
+    column_access  columns{*this};
 };
 
 }  // namespace neo::sqlite3
