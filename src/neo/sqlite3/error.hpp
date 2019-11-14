@@ -107,16 +107,18 @@ inline void set_error_code(std::error_code& ec, int sqlite_err) { ec = to_error_
 
 class sqlite3_error : public std::system_error {
 public:
-    using std::system_error::system_error;
+    sqlite3_error(std::error_code ec, std::string_view message, std::string_view sup)
+        : system_error(ec, std::string(message) + " [" + std::string(sup) + "]") {}
 };
 
-[[noreturn]] inline void throw_error(std::error_code& ec, std::string message) {
-    throw sqlite3_error(ec, std::move(message));
+[[noreturn]] inline void
+throw_error(std::error_code& ec, std::string_view message, std::string_view sup) {
+    throw sqlite3_error(ec, std::move(message), sup);
 }
 
-inline void throw_if_error(std::error_code& ec, std::string_view message) {
+inline void throw_if_error(std::error_code& ec, std::string_view message, std::string_view sup) {
     if (ec) {
-        throw_error(ec, std::string(message));
+        throw_error(ec, message, sup);
     }
 }
 

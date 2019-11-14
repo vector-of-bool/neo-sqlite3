@@ -70,7 +70,8 @@ blob database::open_blob(const string& db,
     if (ec) {
         throw_error(ec,
                     "Failed to open BLOB in " + db + "." + table + "." + column + " at rowid "
-                        + std::to_string(rowid));
+                        + std::to_string(rowid),
+                    error_message());
     }
     return std::move(*ret);
 }
@@ -97,3 +98,5 @@ std::optional<blob> database::open_blob(const string&    db,
 
     return blob(blob::from_raw(), ret_ptr);
 }
+
+std::string_view database::error_message() const noexcept { return ::sqlite3_errmsg(MY_DB_PTR); }

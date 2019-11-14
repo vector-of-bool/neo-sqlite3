@@ -13,7 +13,7 @@ namespace neo::sqlite3 {
 class blob;
 
 class database {
-    void*  _database_void_ptr = nullptr;
+    void* _database_void_ptr = nullptr;
 
     database() = default;
 
@@ -32,7 +32,8 @@ public:
         std::error_code         ec;
         std::optional<database> ret = open(s, ec);
         if (ec) {
-            throw_error(ec, "Failed to open SQLite database [" + std::string(s) + "]");
+            throw_error(ec,
+                        "Failed to open SQLite database [" + std::string(s) + "]", "[failed]");
         }
         return std::move(*ret);
     }
@@ -44,7 +45,7 @@ public:
         std::error_code ec;
         auto            ret = prepare(query, ec);
         if (ec) {
-            throw_error(ec, "Failed to prepare statement: " + std::string(query));
+            throw_error(ec, "Failed to prepare statement: " + std::string(query), error_message());
         }
         return std::move(*ret);
     }
@@ -66,6 +67,8 @@ public:
                                   const std::string& column,
                                   std::int64_t       rowid,
                                   std::error_code&   ec);
+
+    std::string_view error_message() const noexcept;
 };
 
 [[nodiscard]] inline auto create_memory_db() { return database::create_memory_db(); }

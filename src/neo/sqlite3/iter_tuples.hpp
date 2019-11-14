@@ -26,29 +26,30 @@ public:
         iter_rows::iterator               _it;
         mutable std::optional<value_type> _tup;
 
+        auto _unpack_current() noexcept { return _it->unpack<Ts...>(); }
+
     public:
         explicit iterator(iter_rows::iterator it)
-            : _it(it) {}
-
-        reference operator*() const noexcept {
-            _tup.emplace(_it->unpack<Ts...>());
-            return *_tup;
+            : _it(it) {
+            if (!it.is_end()) {
+                _tup.emplace(_unpack_current());
+            }
         }
 
-        pointer operator->() const noexcept {
-            _tup.emplace(_it->unpack<Ts...>());
-            return *_tup;
-        }
+        reference operator*() const noexcept { return *_tup; }
+
+        pointer operator->() const noexcept { return &*_tup; }
 
         iterator& operator++() noexcept {
             ++_it;
+            if (_it.is_end()) {
+                _tup.reset();
+            } else {
+                _tup.emplace(_unpack_current());
+            }
             return *this;
         }
-        iterator operator++(int) noexcept {
-            auto copy = *this;
-            ++*this;
-            return copy;
-        }
+        void operator++(int) noexcept { ++*this; }
 
         friend bool operator==(const iterator& lhs, const iterator& rhs) noexcept {
             return lhs._it == rhs._it;

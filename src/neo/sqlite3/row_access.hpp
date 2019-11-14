@@ -10,11 +10,10 @@ class statement;
 
 class row_access {
     friend class neo::sqlite3::statement;
-    statement* _owner = nullptr;
+    statement& _owner;
     row_access(statement& o)
-        : _owner(&o) {}
+        : _owner(o) {}
     row_access(const row_access&) = delete;
-    row_access& operator=(const row_access&) = delete;
 
     template <typename... Ts, std::size_t... Is>
     std::tuple<Ts...> _unpack(std::index_sequence<Is...>) const noexcept {
