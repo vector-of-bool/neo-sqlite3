@@ -11,7 +11,7 @@ TEST_CASE("Pull the next result") {
     CHECK(i1 == 1);
     CHECK(i2 == 2);
     CHECK(i3 == 3);
-    CHECK(st.is_busy()); // Still waiting
+    CHECK(st.is_busy());  // Still waiting
     CHECK(st.step() == neo::sqlite3::statement::done);
 }
 

@@ -24,4 +24,4 @@ std::tuple<Ts...> unpack_next(statement& st) {
     return std::move(*tup);
 }
 
-}  // namespace neo::sqlite
+}  // namespace neo::sqlite3

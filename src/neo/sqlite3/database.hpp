@@ -32,8 +32,7 @@ public:
         std::error_code         ec;
         std::optional<database> ret = open(s, ec);
         if (ec) {
-            throw_error(ec,
-                        "Failed to open SQLite database [" + std::string(s) + "]", "[failed]");
+            throw_error(ec, "Failed to open SQLite database [" + std::string(s) + "]", "[failed]");
         }
         return std::move(*ret);
     }

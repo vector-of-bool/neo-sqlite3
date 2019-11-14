@@ -72,12 +72,16 @@ value_ref row_access::operator[](int idx) const noexcept {
 
 void binding_access::binding::bind(double d) {
     auto ec = to_error_code(::sqlite3_bind_double(OWNER_STMT_PTR, _index, d));
-    throw_if_error(ec, "sqlite3_bind_double()", ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
+    throw_if_error(ec,
+                   "sqlite3_bind_double()",
+                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
 }
 
 void binding_access::binding::bind(std::int64_t i) {
     auto ec = to_error_code(::sqlite3_bind_int64(OWNER_STMT_PTR, _index, i));
-    throw_if_error(ec, "sqlite3_bind_int64()", ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
+    throw_if_error(ec,
+                   "sqlite3_bind_int64()",
+                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
 }
 
 void binding_access::binding::bind(std::string_view str) {
