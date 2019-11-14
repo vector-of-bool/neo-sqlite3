@@ -47,7 +47,6 @@ statement::state statement::step(std::error_code& ec) noexcept {
 
 #define OWNER_STMT_PTR static_cast<::sqlite3_stmt*>(_owner->_stmt_ptr)
 
-std::size_t row_access::size() const noexcept { return ::sqlite3_column_count(OWNER_STMT_PTR); }
 
 value_ref row_access::operator[](int idx) const noexcept {
     auto col_count = ::sqlite3_column_count(OWNER_STMT_PTR);

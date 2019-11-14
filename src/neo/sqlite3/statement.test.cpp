@@ -11,7 +11,7 @@ TEST_CASE("Run a simple statement") {
 TEST_CASE("Obtain a single value") {
     auto db = neo::sqlite3::create_memory_db();
     auto st = db.prepare("VALUES (42)");
-    CHECK(st.row.size() == 1);
+    REQUIRE(st.columns.count() == 1);
     CHECK(st.step() == neo::sqlite3::statement::more);
     CHECK(st.row[0].is_integer());
     CHECK(st.row[0].as_integer() == 42);
@@ -21,7 +21,7 @@ TEST_CASE("Obtain a single value") {
 TEST_CASE("Check values") {
     auto db = neo::sqlite3::create_memory_db();
     auto st = db.prepare("VALUES (42, 42.1, '42')");
-    CHECK(st.row.size() == 3);
+    REQUIRE(st.columns.count() == 3);
     REQUIRE(st.step() == neo::sqlite3::statement::more);
     SECTION("With true types") {
         CHECK(st.row[0].is_integer());
@@ -46,7 +46,7 @@ TEST_CASE("Unpack tuples") {
     auto db = neo::sqlite3::create_memory_db();
     auto st = db.prepare("VALUES (1, 2, 'I am a string')");
     REQUIRE(st.step() == neo::sqlite3::statement::more);
-    REQUIRE(st.row.size() == 3);
+    REQUIRE(st.columns.count() == 3);
     auto [i1, i2, str] = st.row.unpack<int, int, std::string_view>();
     CHECK(i1 == 1);
     CHECK(i2 == 2);
@@ -76,8 +76,8 @@ TEST_CASE("Named bind") {
 }
 
 TEST_CASE("Tuple bind") {
-    auto db = neo::sqlite3::create_memory_db();
-    auto st = db.prepare("VALUES (?, ?, ?, ?)");
+    auto       db = neo::sqlite3::create_memory_db();
+    auto       st = db.prepare("VALUES (?, ?, ?, ?)");
     std::tuple tup{1, 2, "string", -9.2};
     st.bindings = tup;
     CHECK(st.step() == neo::sqlite3::statement::more);

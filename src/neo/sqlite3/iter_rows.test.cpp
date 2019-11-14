@@ -20,13 +20,13 @@ TEST_CASE("Basic iteration") {
     CHECK(stop != iter);
     CHECK(iter != stop);
     // Repeated access won't advance the iterator
-    CHECK(iter->size() == 3);
-    CHECK(iter->size() == 3);
-    CHECK(iter->size() == 3);
-    CHECK(iter->size() == 3);
-    CHECK(iter->size() == 3);
-    CHECK(iter->size() == 3);
-    CHECK(iter->size() == 3);
+    CHECK_NOTHROW(*iter);
+    CHECK_NOTHROW(*iter);
+    CHECK_NOTHROW(*iter);
+    CHECK_NOTHROW(*iter);
+    CHECK_NOTHROW(*iter);
+    CHECK_NOTHROW(*iter);
+    CHECK_NOTHROW(*iter);
     CHECK(iter != stop);
     {
         auto& row = *iter;

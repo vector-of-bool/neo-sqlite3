@@ -22,8 +22,6 @@ class row_access {
     }
 
 public:
-    std::size_t size() const noexcept;
-
     value_ref operator[](int idx) const noexcept;
 
     template <typename... Ts>
