@@ -84,7 +84,19 @@ void binding_access::binding::bind(std::int64_t i) {
                    ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
 }
 
-void binding_access::binding::bind(std::string_view str) {
+void binding_access::binding::bind(const std::string& str) {
+    auto ec = to_error_code(::sqlite3_bind_text64(OWNER_STMT_PTR,
+                                                  _index,
+                                                  str.data(),
+                                                  str.size(),
+                                                  SQLITE_TRANSIENT,
+                                                  SQLITE_UTF8));
+    throw_if_error(ec,
+                   "sqlite3_bind_text64()",
+                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
+}
+
+void binding_access::binding::_bind_nocopy(std::string_view str) {
     auto ec = to_error_code(::sqlite3_bind_text64(OWNER_STMT_PTR,
                                                   _index,
                                                   str.data(),

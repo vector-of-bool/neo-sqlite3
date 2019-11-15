@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <tuple>
+#include <type_traits>
 
 namespace neo::sqlite3 {
 
@@ -36,12 +37,18 @@ class binding_access {
             : _owner(o)
             , _index(idx) {}
 
+        void _bind_nocopy(std::string_view s);
+
     public:
         void bind(double);
         void bind(std::int64_t);
-        void bind(std::string_view);
+        void bind(const std::string&);
         void bind(null_t);
         void bind(zeroblob);
+        template <typename T, std::enable_if_t<std::is_same_v<T, std::string_view>>>
+        void bind(T v) {
+            _bind_nocopy(v);
+        }
 
         double operator=(double v) && {
             bind(v);
@@ -67,8 +74,13 @@ class binding_access {
             bind(v);
             return v;
         }
-        std::string_view operator=(std::string_view v) && {
+        template <typename T, std::enable_if_t<std::is_same_v<T, std::string_view>>>
+        std::string_view operator=(T v) && {
             bind(v);
+            return v;
+        }
+        std::string operator=(const std::string& v) && {
+            bind(std::move(v));
             return v;
         }
         null_t operator=(null_t) && {
@@ -83,7 +95,7 @@ class binding_access {
 
     template <typename T>
     void _assign_one(std::size_t i, const T& what) {
-        (*this)[i + 1] = what;
+        (*this)[i + static_cast<std::size_t>(1)] = what;
     }
 
     template <typename Tuple, std::size_t... Is>
@@ -104,9 +116,10 @@ public:
 
     void clear() noexcept;
 
-    template <typename Tuple, std::size_t = std::tuple_size<Tuple>::value>
-    Tuple operator=(const Tuple& tup) {
-        _assign_tup(tup, std::make_index_sequence<std::tuple_size_v<Tuple>>());
+    template <typename Tuple, std::size_t = std::tuple_size<std::decay_t<Tuple>>::value>
+    Tuple&& operator=(Tuple&& tup) {
+        _assign_tup(tup, std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>());
+        return std::forward<Tuple>(tup);
     }
 };
 
