@@ -40,6 +40,14 @@ std::optional<statement> database::prepare(string_view query, std::error_code& e
     return ret;
 }
 
+void database::exec(const std::string& code) {
+    char* errmsg = nullptr;
+    auto rc = ::sqlite3_exec(MY_DB_PTR, code.data(), nullptr, nullptr, &errmsg);
+    if (rc) {
+        throw sqlite3_error(to_error_code(rc), "::sqlite3_exec() failed", errmsg);
+    }
+}
+
 database::~database() { ::sqlite3_close(MY_DB_PTR); }
 
 bool database::is_transaction_active() const noexcept {

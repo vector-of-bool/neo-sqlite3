@@ -49,6 +49,8 @@ public:
         return std::move(*ret);
     }
 
+    void exec(const std::string& code);
+
     bool         is_transaction_active() const noexcept;
     std::int64_t last_insert_rowid() const noexcept;
 
