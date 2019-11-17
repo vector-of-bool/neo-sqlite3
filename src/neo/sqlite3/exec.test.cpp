@@ -66,4 +66,11 @@ TEST_CASE("Iterate tuples") {
     auto tups = neo::sqlite3::exec_iter<int, int, int>(stmt_cache, "SELECT * FROM foo"_sql);
     auto it   = tups.begin();
     auto stop = tups.end();
+
+    auto tup1 = *it;
+    CHECK(tup1 == std::tuple(1, 2, 3));
+    auto tup2 = *++it;
+    CHECK(tup2 == std::tuple(4, 5, 6));
+    ++it;
+    CHECK(it == stop);
 }
