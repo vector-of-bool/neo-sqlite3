@@ -26,6 +26,7 @@ transaction_guard::~transaction_guard() {
         } catch (const std::exception& e) {
             std::cerr << "An exception occurred while rolling back a SQLite transaction due to "
                          "another exception. The system may now be in an inconsistent state!\n";
+            std::cerr << "The exception message: " << e.what() << '\n';
         }
     } else {
         commit();
