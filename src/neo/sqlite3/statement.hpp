@@ -45,7 +45,7 @@ class binding_access {
         void bind(const std::string&);
         void bind(null_t);
         void bind(zeroblob);
-        template <typename T, std::enable_if_t<std::is_same_v<T, std::string_view>>>
+        template <typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
         void bind(T v) {
             _bind_nocopy(v);
         }
@@ -74,7 +74,7 @@ class binding_access {
             bind(v);
             return v;
         }
-        template <typename T, std::enable_if_t<std::is_same_v<T, std::string_view>>>
+        template <typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
         std::string_view operator=(T v) && {
             bind(v);
             return v;
@@ -94,13 +94,13 @@ class binding_access {
     };
 
     template <typename T>
-    void _assign_one(std::size_t i, const T& what) {
-        (*this)[i + static_cast<std::size_t>(1)] = what;
+    void _assign_one(int i, const T& what) {
+        (*this)[i + 1] = what;
     }
 
     template <typename Tuple, std::size_t... Is>
     void _assign_tup(const Tuple& tup, std::index_sequence<Is...>) {
-        (_assign_one(Is, std::get<Is>(tup)), ...);
+        (_assign_one(static_cast<int>(Is), std::get<Is>(tup)), ...);
     }
 
 public:
