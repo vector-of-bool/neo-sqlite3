@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 using namespace neo;
 using namespace neo::sqlite3;
