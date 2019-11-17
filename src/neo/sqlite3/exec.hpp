@@ -43,7 +43,7 @@ void exec(statement_cache& stc, sql_string_literal sql, const std::tuple<Ts...>&
     st.run_to_completion();
 }
 
-inline void exec(statement_cache& stc, sql_string_literal sql) { exec(stc, sql, std::tuple()); }
+inline void exec(statement_cache& stc, sql_string_literal sql) { exec(stc, sql, std::tuple<>()); }
 
 template <typename... Ts>
 auto exec_iter(statement_cache& stc, sql_string_literal sql, const std::tuple<Ts...>& bindings) {
@@ -64,12 +64,12 @@ auto exec_iter(statement_cache& stc, sql_string_literal sql, const std::tuple<Ts
 }
 
 inline auto exec_iter(statement_cache& stc, sql_string_literal sql) {
-    return exec_iter(stc, sql, std::tuple());
+    return exec_iter(stc, sql, std::tuple<>());
 }
 
 template <typename... OutTypes, typename = std::enable_if_t<sizeof...(OutTypes)>>
 auto exec_iter(statement_cache& stc, sql_string_literal sql) {
-    return exec_iter<OutTypes...>(stc, sql, std::tuple());
+    return exec_iter<OutTypes...>(stc, sql, std::tuple<>());
 }
 
 }  // namespace neo::sqlite3
