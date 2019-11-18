@@ -13,24 +13,12 @@ public:
     class iterator {
         friend class iter_rows;
 
-        statement* _st = nullptr;
-        enum state : char {
-            okay,
-            pending_adv,
-            done,
-        };
-        mutable state _state = state::pending_adv;
-
-        void _adv_if_pending() const {
-            if (_state == state::pending_adv) {
-                auto st_status = _st->step();
-                _state         = st_status == statement::more ? state::okay : state::done;
-            }
-        }
+        statement* _st   = nullptr;
+        bool       _done = false;
 
         struct end_iter {};
         explicit iterator(end_iter)
-            : _state(state::done) {}
+            : _done(true) {}
 
     public:
         using difference_type   = std::ptrdiff_t;
@@ -42,39 +30,36 @@ public:
         explicit iterator(statement& st)
             : _st(&st) {}
 
-        reference operator*() const noexcept {
-            _adv_if_pending();
-            return _st->row;
-        }
-        pointer operator->() const noexcept {
-            _adv_if_pending();
-            return &_st->row;
-        }
+        reference operator*() const noexcept { return _st->row; }
+        pointer   operator->() const noexcept { return &_st->row; }
         iterator& operator++() noexcept {
-            _adv_if_pending();
-            _state = state::pending_adv;
+            if (_st->step() == statement::done) {
+                _done = true;
+            }
             return *this;
         }
         // The `void` is not a typo.
-        void operator++(int) noexcept {
-            _adv_if_pending();
-            _state = state::pending_adv;
-        }
+        void operator++(int) noexcept { ++(*this); }
+
+        [[nodiscard]] bool is_end() const noexcept { return _done; }
 
         friend bool operator==(const iterator& lhs, const iterator& rhs) {
-            lhs._adv_if_pending();
-            rhs._adv_if_pending();
-            return lhs._state == rhs._state;
+            return lhs._done == rhs._done;
         }
         friend bool operator!=(const iterator& lhs, const iterator& rhs) { return !(lhs == rhs); }
-
-        bool has_pending_advance() const noexcept { return _state == state::pending_adv; }
     };
 
     explicit iter_rows(statement& st)
         : _st(st) {}
 
-    iterator begin() const noexcept { return iterator(_st); }
+    iterator begin() const noexcept {
+        if (!_st.is_busy()) {
+            if (_st.step() == statement::done) {
+                return iterator(iterator::end_iter());
+            }
+        }
+        return iterator(_st);
+    }
     iterator end() const noexcept { return iterator(iterator::end_iter()); }
 };
 

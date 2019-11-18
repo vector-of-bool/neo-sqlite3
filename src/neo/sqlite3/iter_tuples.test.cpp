@@ -20,17 +20,19 @@ TEST_CASE("Iterate over some tuples") {
     auto stop     = tup_iter.end();
     CHECK(iter != stop);
     {
-        auto [a, b, c] = *iter++;
+        auto [a, b, c] = *iter;
         CHECK(a == 1);
         CHECK(b == 2);
         CHECK(c == "STRING");
+        ++iter;
     }
     CHECK(iter != stop);
     {
-        auto [a, b, c] = *iter++;
+        auto [a, b, c] = *iter;
         CHECK(a == 2);
         CHECK(b == 5);
         CHECK(c == "other");
+        ++iter;
     }
     CHECK(iter == stop);
 }

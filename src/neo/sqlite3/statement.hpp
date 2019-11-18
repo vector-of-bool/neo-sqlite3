@@ -1,10 +1,12 @@
 #pragma once
 
+#include <neo/sqlite3/column_access.hpp>
 #include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/row_access.hpp>
 
 #include <optional>
 #include <tuple>
+#include <type_traits>
 
 namespace neo::sqlite3 {
 
@@ -21,23 +23,32 @@ struct zeroblob {
 
 class binding_access {
     friend class neo::sqlite3::statement;
-    statement* _owner = nullptr;
+    statement& _owner;
     binding_access(statement& o)
-        : _owner(&o) {}
+        : _owner(o) {}
     binding_access(const binding_access&) = delete;
-    binding_access& operator=(const binding_access&) = delete;
 
     class binding {
         friend class binding_access;
-        statement* _owner = nullptr;
+        statement& _owner;
         int        _index = 0;
+
+        explicit binding(statement& o, int idx)
+            : _owner(o)
+            , _index(idx) {}
+
+        void _bind_nocopy(std::string_view s);
 
     public:
         void bind(double);
         void bind(std::int64_t);
-        void bind(std::string_view);
+        void bind(const std::string&);
         void bind(null_t);
         void bind(zeroblob);
+        template <typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
+        void bind(T v) {
+            _bind_nocopy(v);
+        }
 
         double operator=(double v) && {
             bind(v);
@@ -63,8 +74,13 @@ class binding_access {
             bind(v);
             return v;
         }
-        std::string_view operator=(std::string_view v) && {
+        template <typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
+        std::string_view operator=(T v) && {
             bind(v);
+            return v;
+        }
+        std::string operator=(const std::string& v) && {
+            bind(std::move(v));
             return v;
         }
         null_t operator=(null_t) && {
@@ -78,22 +94,17 @@ class binding_access {
     };
 
     template <typename T>
-    void _assign_one(std::size_t i, const T& what) {
+    void _assign_one(int i, const T& what) {
         (*this)[i + 1] = what;
     }
 
     template <typename Tuple, std::size_t... Is>
     void _assign_tup(const Tuple& tup, std::index_sequence<Is...>) {
-        (_assign_one(Is, std::get<Is>(tup)), ...);
+        (_assign_one(static_cast<int>(Is), std::get<Is>(tup)), ...);
     }
 
 public:
-    binding operator[](int idx) const noexcept {
-        binding ret;
-        ret._owner = _owner;
-        ret._index = idx;
-        return ret;
-    }
+    binding operator[](int idx) const noexcept { return binding{_owner, idx}; }
     binding operator[](const std::string& str) const noexcept {
         return operator[](named_parameter_index(str));
     }
@@ -105,15 +116,17 @@ public:
 
     void clear() noexcept;
 
-    template <typename Tuple, std::size_t = std::tuple_size<Tuple>::value>
-    Tuple operator=(const Tuple& tup) {
-        _assign_tup(tup, std::make_index_sequence<std::tuple_size_v<Tuple>>());
+    template <typename Tuple, std::size_t = std::tuple_size<std::decay_t<Tuple>>::value>
+    Tuple&& operator=(Tuple&& tup) {
+        _assign_tup(tup, std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>());
+        return std::forward<Tuple>(tup);
     }
 };
 
 class statement {
     friend class database;
     friend class row_access;
+    friend class column_access;
     friend class binding_access;
     friend class binding_access::binding;
 
@@ -147,16 +160,8 @@ public:
 
     void reset() noexcept;
 
-    [[nodiscard]] state step() {
-        std::error_code ec;
-        auto            result = step(ec);
-        if (ec) {
-            throw sqlite3_error(ec, "Failure while executing statement");
-        }
-        return result;
-    }
-
-        [[nodiscard]] state step(std::error_code& ec) noexcept;
+    [[nodiscard]] state step();
+    [[nodiscard]] state step(std::error_code& ec) noexcept;
 
     void run_to_completion() {
         while (step() == more) {
@@ -164,8 +169,11 @@ public:
         }
     }
 
+    [[nodiscard]] bool is_busy() const noexcept;
+
     row_access     row{*this};
     binding_access bindings{*this};
+    column_access  columns{*this};
 };
 
 }  // namespace neo::sqlite3

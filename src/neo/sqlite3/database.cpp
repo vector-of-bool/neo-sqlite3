@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 using namespace neo;
 using namespace neo::sqlite3;
@@ -32,12 +33,20 @@ std::optional<statement> database::prepare(string_view query, std::error_code& e
     const char*     str_tail = nullptr;
     ::sqlite3_stmt* stmt     = nullptr;
     set_error_code(ec,
-                   ::sqlite3_prepare_v2(MY_DB_PTR, query.data(), query.size(), &stmt, &str_tail));
+                   ::sqlite3_prepare_v2(MY_DB_PTR, query.data(), static_cast<int>(query.size()), &stmt, &str_tail));
     if (ec) {
         return std::nullopt;
     }
     ret._stmt_ptr = stmt;
     return ret;
+}
+
+void database::exec(const std::string& code) {
+    char* errmsg = nullptr;
+    auto rc = ::sqlite3_exec(MY_DB_PTR, code.data(), nullptr, nullptr, &errmsg);
+    if (rc) {
+        throw sqlite3_error(to_error_code(rc), "::sqlite3_exec() failed", errmsg);
+    }
 }
 
 database::~database() { ::sqlite3_close(MY_DB_PTR); }
@@ -70,7 +79,8 @@ blob database::open_blob(const string& db,
     if (ec) {
         throw_error(ec,
                     "Failed to open BLOB in " + db + "." + table + "." + column + " at rowid "
-                        + std::to_string(rowid));
+                        + std::to_string(rowid),
+                    error_message());
     }
     return std::move(*ret);
 }
@@ -97,3 +107,5 @@ std::optional<blob> database::open_blob(const string&    db,
 
     return blob(blob::from_raw(), ret_ptr);
 }
+
+std::string_view database::error_message() const noexcept { return ::sqlite3_errmsg(MY_DB_PTR); }
