@@ -67,7 +67,7 @@ value_ref row_access::operator[](int idx) const noexcept {
            "`step()` was never called, or the statement needs to be `reset()`.");
     assert(idx < col_count && "Access to column beyond-the-end");
     auto val = ::sqlite3_column_value(OWNER_STMT_PTR, idx);
-    return value_ref::from_ptr(val);
+    return value_ref::from_ptr(reinterpret_cast<raw::sqlite3_value*>(val));
 }
 
 void binding_access::binding::bind(double d) {

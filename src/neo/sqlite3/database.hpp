@@ -10,20 +10,28 @@
 
 namespace neo::sqlite3 {
 
+namespace raw {
+
+struct sqlite3;
+
+}  // namespace raw
+
 class blob;
 
+class scalar_function;
+
 class database {
-    void* _database_void_ptr = nullptr;
+    raw::sqlite3* _ptr;
 
     database() = default;
 
 public:
     ~database();
     database(database&& other) noexcept
-        : _database_void_ptr(std::exchange(other._database_void_ptr, nullptr)) {}
+        : _ptr(std::exchange(other._ptr, nullptr)) {}
 
     database& operator=(database&& other) noexcept {
-        std::swap(other._database_void_ptr, _database_void_ptr);
+        std::swap(other._ptr, _ptr);
         return *this;
     }
 

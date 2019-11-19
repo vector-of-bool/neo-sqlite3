@@ -12,7 +12,7 @@ using namespace neo::sqlite3;
 using std::string;
 using std::string_view;
 
-#define MY_DB_PTR static_cast<::sqlite3*>(this->_database_void_ptr)
+#define MY_DB_PTR reinterpret_cast<::sqlite3*>(this->_ptr)
 
 std::optional<database> database::open(const string& db_name, std::error_code& ec) noexcept {
     ec                = {};
@@ -23,7 +23,7 @@ std::optional<database> database::open(const string& db_name, std::error_code& e
     }
 
     database ret;
-    ret._database_void_ptr = new_db;
+    ret._ptr = reinterpret_cast<raw::sqlite3*>(new_db);
     return ret;
 }
 

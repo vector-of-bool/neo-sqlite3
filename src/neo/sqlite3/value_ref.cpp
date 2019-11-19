@@ -7,7 +7,7 @@
 
 using namespace neo::sqlite3;
 
-#define MY_VALUE_PTR static_cast<::sqlite3_value*>(_value_ptr)
+#define MY_VALUE_PTR reinterpret_cast<::sqlite3_value*>(_value_ptr)
 
 value_type value_ref::type() const noexcept {
     switch (::sqlite3_value_type(MY_VALUE_PTR)) {
