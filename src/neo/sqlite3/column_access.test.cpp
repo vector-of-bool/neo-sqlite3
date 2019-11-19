@@ -1,11 +1,8 @@
 #include <neo/sqlite3/column_access.hpp>
 
-#include <neo/sqlite3/database.hpp>
+#include "./tests.inl"
 
-#include <catch2/catch.hpp>
-
-TEST_CASE("Access column information") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Access column information") {
     db.prepare("CREATE TABLE people (name, age, job)").run_to_completion();
     db.prepare("CREATE TABLE pets (name, species, owner)").run_to_completion();
     auto st = db.prepare(R"(

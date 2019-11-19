@@ -1,10 +1,8 @@
-#include <neo/sqlite3/database.hpp>
 #include <neo/sqlite3/transaction.hpp>
 
-#include <catch2/catch.hpp>
+#include "./tests.inl"
 
-TEST_CASE("Create and drop a simple transaction") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Create and drop a simple transaction") {
     CHECK_FALSE(db.is_transaction_active());
     {
         neo::sqlite3::transaction_guard tr{db};

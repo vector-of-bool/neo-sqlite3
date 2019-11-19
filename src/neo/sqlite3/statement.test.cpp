@@ -1,15 +1,13 @@
 #include <neo/sqlite3/database.hpp>
 
-#include <catch2/catch.hpp>
+#include "./tests.inl"
 
-TEST_CASE("Run a simple statement") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Run a simple statement") {
     auto st = db.prepare("CREATE TABLE mine(name, age)");
     CHECK(st.step() == neo::sqlite3::statement::done);
 }
 
-TEST_CASE("Obtain a single value") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Obtain a single value") {
     auto st = db.prepare("VALUES (42)");
     REQUIRE(st.columns.count() == 1);
     CHECK(st.step() == neo::sqlite3::statement::more);
@@ -18,8 +16,7 @@ TEST_CASE("Obtain a single value") {
     CHECK(st.step() == neo::sqlite3::statement::done);
 }
 
-TEST_CASE("Check values") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Check values") {
     auto st = db.prepare("VALUES (42, 42.1, '42')");
     REQUIRE(st.columns.count() == 3);
     REQUIRE(st.step() == neo::sqlite3::statement::more);
@@ -42,8 +39,7 @@ TEST_CASE("Check values") {
     CHECK(st.step() == neo::sqlite3::statement::done);
 }
 
-TEST_CASE("Unpack tuples") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Unpack tuples") {
     auto st = db.prepare("VALUES (1, 2, 'I am a string')");
     REQUIRE(st.step() == neo::sqlite3::statement::more);
     REQUIRE(st.columns.count() == 3);
@@ -54,8 +50,7 @@ TEST_CASE("Unpack tuples") {
     CHECK(st.step() == neo::sqlite3::statement::done);
 }
 
-TEST_CASE("Numeric bind") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Numeric bind") {
     auto st = db.prepare("VALUES (?, ?)");
     // st.bind(0, "cat");
     // st.bind(1, 9);
@@ -66,8 +61,7 @@ TEST_CASE("Numeric bind") {
     CHECK(st.row[1].as_text() == "cat");
 }
 
-TEST_CASE("Named bind") {
-    auto db             = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Named bind") {
     auto st             = db.prepare("VALUES (:foo, :bar)");
     st.bindings[":foo"] = 22;
     st.bindings[":bar"] = "Cats";
@@ -75,8 +69,7 @@ TEST_CASE("Named bind") {
     CHECK(st.row.unpack<int, std::string_view>() == std::tuple(22, "Cats"));
 }
 
-TEST_CASE("Tuple bind") {
-    auto       db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Tuple bind") {
     auto       st = db.prepare("VALUES (?, ?, ?, ?)");
     std::tuple tup{1, 2, "string", -9.2};
     st.bindings = tup;
