@@ -18,7 +18,7 @@ struct sqlite3;
 
 class blob;
 
-class scalar_function;
+enum class fn_flags;
 
 class database {
     raw::sqlite3* _ptr;
@@ -78,6 +78,12 @@ public:
                                   std::error_code&   ec);
 
     std::string_view error_message() const noexcept;
+
+    // To use: #include <neo/sqlite3/function.hpp>
+    template <typename Func>
+    void register_function(const std::string& name, Func&& fn);
+    template <typename Func>
+    void register_function(const std::string& name, fn_flags, Func&& fn);
 };
 
 [[nodiscard]] inline auto create_memory_db() { return database::create_memory_db(); }
