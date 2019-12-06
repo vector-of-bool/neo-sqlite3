@@ -1,10 +1,10 @@
 #include <neo/sqlite3/statement_cache.hpp>
 
-#include <catch2/catch.hpp>
+#include "./tests.inl"
 
 using namespace neo::sqlite3::literals;
 
-TEST_CASE("Basic statement caching") {
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic statement caching") {
     auto                          db = neo::sqlite3::create_memory_db();
     neo::sqlite3::statement_cache cache{db};
 

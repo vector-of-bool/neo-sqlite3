@@ -2,10 +2,9 @@
 
 #include <neo/sqlite3/database.hpp>
 
-#include <catch2/catch.hpp>
+#include "./tests.inl"
 
-TEST_CASE("Basic iteration") {
-    auto db = neo::sqlite3::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic iteration") {
     db.prepare(R"(
         CREATE TABLE stuff
         AS VALUES

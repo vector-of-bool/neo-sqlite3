@@ -6,6 +6,12 @@
 
 namespace neo::sqlite3 {
 
+namespace raw {
+
+struct sqlite3_value;
+
+}  // namespace raw
+
 class row_access;
 
 inline struct null_t {
@@ -23,14 +29,9 @@ enum class value_type {
 class value_ref {
     friend class row_access;
 
-    void* _value_ptr = nullptr;
+    raw::sqlite3_value* _value_ptr = nullptr;
 
     value_ref() = default;
-    static value_ref from_ptr(void* p) {
-        value_ref ret;
-        ret._value_ptr = p;
-        return ret;
-    }
 
     template <typename T>
     struct type_tag {};
@@ -60,6 +61,12 @@ class value_ref {
     }
 
 public:
+    static value_ref from_ptr(raw::sqlite3_value* p) {
+        value_ref ret;
+        ret._value_ptr = p;
+        return ret;
+    }
+
     [[nodiscard]] value_type type() const noexcept;
 
     [[nodiscard]] bool         is_integer() const noexcept { return type() == value_type::integer; }

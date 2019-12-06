@@ -2,10 +2,9 @@
 
 #include <neo/sqlite3/iter_tuples.hpp>
 
-#include <catch2/catch.hpp>
+#include "./tests.inl"
 
-TEST_CASE("Execute some queries") {
-    auto db = neo::sqlite3::database::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute some queries") {
     db.exec("CREATE TABLE foo (value)");
     neo::sqlite3::exec(db, "INSERT INTO foo VALUES (?)", std::tuple(2));
     neo::sqlite3::exec(db, "INSERT INTO foo VALUES (?)", std::tuple(55));
@@ -18,9 +17,8 @@ TEST_CASE("Execute some queries") {
     CHECK(std::get<0>(*it) == 57);
 }
 
-TEST_CASE("Execute with a cache") {
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute with a cache") {
     using namespace neo::sqlite3::literals;
-    auto db = neo::sqlite3::create_memory_db();
     db.exec("CREATE TABLE foo (value)");
     neo::sqlite3::statement_cache stmt_cache{db};
     neo::sqlite3::exec(stmt_cache, "INSERT INTO foo VALUES (12)"_sql);
@@ -29,9 +27,8 @@ TEST_CASE("Execute with a cache") {
     neo::sqlite3::exec(stmt_cache, "INSERT INTO foo VALUES (?)"_sql, std::tuple(24));
 }
 
-TEST_CASE("Iterate rows") {
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate rows") {
     using namespace neo::sqlite3::literals;
-    auto db = neo::sqlite3::create_memory_db();
     db.exec(R"(
         CREATE TABLE foo AS
         VALUES
@@ -53,7 +50,7 @@ TEST_CASE("Iterate rows") {
     CHECK(it == stop);
 }
 
-TEST_CASE("Iterate tuples") {
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate tuples") {
     using namespace neo::sqlite3::literals;
     auto db = neo::sqlite3::create_memory_db();
     db.exec(R"(

@@ -3,13 +3,14 @@
 #include <neo/sqlite3/iter_rows.hpp>
 #include <neo/sqlite3/statement.hpp>
 
+#include <cassert>
 #include <optional>
 
 namespace neo::sqlite3 {
 
 template <typename... Ts>
 class iter_tuples {
-    statement& _st;
+    statement* _st = nullptr;
 
 public:
     class iterator {
@@ -29,6 +30,7 @@ public:
         auto _unpack_current() noexcept { return _it->unpack<Ts...>(); }
 
     public:
+        iterator() = default;
         explicit iterator(iter_rows::iterator it)
             : _it(it) {
             if (!it.is_end()) {
@@ -59,11 +61,18 @@ public:
         }
     };
 
+    iter_tuples() = default;
     explicit iter_tuples(statement& st)
-        : _st(st) {}
+        : _st(&st) {}
 
-    iterator begin() const noexcept { return iterator(iter_rows(_st).begin()); }
-    iterator end() const noexcept { return iterator(iter_rows(_st).end()); }
+    iterator begin() const noexcept {
+        assert(_st != nullptr);
+        return iterator(iter_rows(*_st).begin());
+    }
+    iterator end() const noexcept {
+        assert(_st != nullptr);
+        return iterator(iter_rows(*_st).end());
+    }
 };
 
 }  // namespace neo::sqlite3

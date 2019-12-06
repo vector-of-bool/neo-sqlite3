@@ -1,10 +1,8 @@
-#include <neo/sqlite3/database.hpp>
 #include <neo/sqlite3/iter_tuples.hpp>
 
-#include <catch2/catch.hpp>
+#include "./tests.inl"
 
-TEST_CASE("Iterate over some tuples") {
-    auto db = neo::sqlite3::database::create_memory_db();
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate over some tuples") {
     db.prepare(R"(
         CREATE TABLE stuff
         AS VALUES
