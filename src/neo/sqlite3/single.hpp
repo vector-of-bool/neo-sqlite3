@@ -19,7 +19,7 @@ std::optional<std::tuple<Ts...>> unpack_single_opt(statement& st) {
         throw std::runtime_error(
             "More one element pulled from statement for unpack_single* functions");
     }
-    return std::move(opt_elem);
+    return opt_elem;
 }
 
 template <typename... Ts>
