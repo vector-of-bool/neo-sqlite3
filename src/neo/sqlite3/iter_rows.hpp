@@ -1,13 +1,14 @@
 #pragma once
 
-#include <iterator>
-
 #include <neo/sqlite3/statement.hpp>
+
+#include <cassert>
+#include <iterator>
 
 namespace neo::sqlite3 {
 
 class iter_rows {
-    statement& _st;
+    statement* _st;
 
 public:
     class iterator {
@@ -27,6 +28,7 @@ public:
         using pointer           = value_type*;
         using iterator_category = std::input_iterator_tag;
 
+        iterator() = default;
         explicit iterator(statement& st)
             : _st(&st) {}
 
@@ -49,18 +51,23 @@ public:
         friend bool operator!=(const iterator& lhs, const iterator& rhs) { return !(lhs == rhs); }
     };
 
+    iter_rows() = default;
     explicit iter_rows(statement& st)
-        : _st(st) {}
+        : _st(&st) {}
 
     iterator begin() const noexcept {
-        if (!_st.is_busy()) {
-            if (_st.step() == statement::done) {
+        assert(_st != nullptr);
+        if (!_st->is_busy()) {
+            if (_st->step() == statement::done) {
                 return iterator(iterator::end_iter());
             }
         }
-        return iterator(_st);
+        return iterator(*_st);
     }
-    iterator end() const noexcept { return iterator(iterator::end_iter()); }
+    iterator end() const noexcept {
+        assert(_st != nullptr);
+        return iterator(iterator::end_iter());
+    }
 };
 
 }  // namespace neo::sqlite3
