@@ -11,7 +11,9 @@ transaction_guard::transaction_guard(database& db) {
     _is_topmost            = !db.is_transaction_active();
     _n_uncaught_exceptions = std::uncaught_exceptions();
     _db                    = &db;
-    db.prepare("BEGIN").run_to_completion();
+    if (_is_topmost) {
+        db.prepare("BEGIN").run_to_completion();
+    }
 }
 
 transaction_guard::~transaction_guard() {
