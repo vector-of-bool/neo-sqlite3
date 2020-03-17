@@ -1,0 +1,6 @@
+{
+    "name": "neo-sqlite3",
+    "version": "0.2.3",
+    "namespace": "neo",
+    "test_driver": "Catch-Main"
+}

@@ -1,5 +1,0 @@
-Name: neo-sqlite3
-Version: 0.2.2
-Namespace: neo
-
-Test-Driver: Catch-Main
