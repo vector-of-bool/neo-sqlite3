@@ -69,7 +69,7 @@ void detail::register_function(raw::sqlite3*                            db_,
     auto rc
         = ::sqlite3_create_function_v2(db,
                                        name.data(),
-                                       argc,
+                                       static_cast<int>(argc),
                                        SQLITE_UTF8
                                            | ((flags & fn_flags::allow_indirect) != fn_flags::none
                                                   ? 0
