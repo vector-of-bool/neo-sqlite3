@@ -21,6 +21,8 @@ std::optional<database> database::open(const string& db_name, std::error_code& e
     if (ec) {
         return std::nullopt;
     }
+    // Enabled extended result codes on our new database
+    ::sqlite3_extended_result_codes(new_db, 1);
 
     database ret;
     ret._ptr = reinterpret_cast<raw::sqlite3*>(new_db);
