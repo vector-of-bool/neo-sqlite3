@@ -33,7 +33,11 @@ std::optional<statement> database::prepare(string_view query, std::error_code& e
     const char*     str_tail = nullptr;
     ::sqlite3_stmt* stmt     = nullptr;
     set_error_code(ec,
-                   ::sqlite3_prepare_v2(MY_DB_PTR, query.data(), static_cast<int>(query.size()), &stmt, &str_tail));
+                   ::sqlite3_prepare_v2(MY_DB_PTR,
+                                        query.data(),
+                                        static_cast<int>(query.size()),
+                                        &stmt,
+                                        &str_tail));
     if (ec) {
         return std::nullopt;
     }
@@ -43,9 +47,9 @@ std::optional<statement> database::prepare(string_view query, std::error_code& e
 
 void database::exec(const std::string& code) {
     char* errmsg = nullptr;
-    auto rc = ::sqlite3_exec(MY_DB_PTR, code.data(), nullptr, nullptr, &errmsg);
+    auto  rc     = ::sqlite3_exec(MY_DB_PTR, code.data(), nullptr, nullptr, &errmsg);
     if (rc) {
-        throw sqlite3_error(to_error_code(rc), "::sqlite3_exec() failed", errmsg);
+        throw_error(to_error_code(rc), "::sqlite3_exec() failed", errmsg);
     }
 }
 

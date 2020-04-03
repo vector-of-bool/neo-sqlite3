@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <string_view>
 #include <functional>
+#include <string_view>
 
 namespace neo::sqlite3 {
 
@@ -28,7 +28,8 @@ public:
         return std::equal_to<>()(lhs._str.data(), rhs._str.data());
     }
 
-    friend constexpr bool operator!=(sql_string_literal lhs, const sql_string_literal rhs) noexcept {
+    friend constexpr bool operator!=(sql_string_literal       lhs,
+                                     const sql_string_literal rhs) noexcept {
         return !(lhs == rhs);
     }
 };
