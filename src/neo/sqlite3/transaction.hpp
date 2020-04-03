@@ -30,7 +30,7 @@ public:
 
     void commit();
     void rollback();
-    void drop();
+    void drop() noexcept { _dropped = true; }
 
     bool is_top_transaction() const noexcept { return _is_topmost; }
 };

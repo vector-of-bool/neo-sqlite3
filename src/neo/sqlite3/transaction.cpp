@@ -41,6 +41,7 @@ void transaction_guard::commit() {
     }
 
     _db->prepare("COMMIT").run_to_completion();
+    drop();
 }
 
 void transaction_guard::rollback() {
@@ -49,4 +50,5 @@ void transaction_guard::rollback() {
     }
 
     _db->prepare("ROLLBACK").run_to_completion();
+    drop();
 }
