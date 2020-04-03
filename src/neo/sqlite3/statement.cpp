@@ -27,7 +27,7 @@ statement::state statement::step() {
     auto            result = step(ec);
     if (ec) {
         auto db = ::sqlite3_db_handle(MY_STMT_PTR);
-        throw sqlite3_error(ec, "Failure while executing statement", ::sqlite3_errmsg(db));
+        throw_error(ec, "Failure while executing statement", ::sqlite3_errmsg(db));
     }
     return result;
 }
@@ -39,10 +39,6 @@ statement::state statement::step(std::error_code& ec) noexcept {
     }
     if (result == SQLITE_ROW) {
         return state::more;
-    }
-    if (result == SQLITE_BUSY) {
-        ec = make_error_code(errc::busy);
-        return state::error;
     }
     if (result == SQLITE_MISUSE) {
         std::cerr << "neo::sqlite3 : The application has requested the advancement of a SQLite "

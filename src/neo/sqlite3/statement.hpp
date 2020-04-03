@@ -45,7 +45,8 @@ class binding_access {
         void bind(const std::string&);
         void bind(null_t);
         void bind(zeroblob);
-        template <typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
+        template <typename T,
+                  typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
         void bind(T v) {
             _bind_nocopy(v);
         }
@@ -74,7 +75,8 @@ class binding_access {
             bind(v);
             return v;
         }
-        template <typename T, typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
+        template <typename T,
+                  typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
         std::string_view operator=(T v) && {
             bind(v);
             return v;

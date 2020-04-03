@@ -2,22 +2,29 @@
 
 #include <neo/sqlite3/database.hpp>
 
+#include <cassert>
 #include <exception>
 #include <iostream>
+#include <stdexcept>
 
 using namespace neo::sqlite3;
 
-transaction_guard::transaction_guard(database& db) {
-    _is_topmost            = !db.is_transaction_active();
-    _n_uncaught_exceptions = std::uncaught_exceptions();
-    _db                    = &db;
-    if (_is_topmost) {
-        db.prepare("BEGIN").run_to_completion();
+recursive_transaction_guard::recursive_transaction_guard(database& db) {
+    if (!db.is_transaction_active()) {
+        // There is no active transaction, so we are the top-most transaction
+        // guard. Create an inner transaction guard to track the transaction
+        _inner = transaction_guard(db);
     }
 }
 
+transaction_guard::transaction_guard(database& db) {
+    _n_uncaught_exceptions = std::uncaught_exceptions();
+    _db                    = &db;
+    db.prepare("BEGIN").run_to_completion();
+}
+
 transaction_guard::~transaction_guard() {
-    if (_dropped || !_is_topmost) {
+    if (_db == nullptr) {
         return;
     }
 
@@ -37,16 +44,18 @@ transaction_guard::~transaction_guard() {
 
 void transaction_guard::commit() {
     if (_db == nullptr) {
-        return;
+        assert(false && "transaction_guard::commit() on ended (or dropped) transaction");
+        std::terminate();
     }
-
     _db->prepare("COMMIT").run_to_completion();
+    drop();
 }
 
 void transaction_guard::rollback() {
     if (_db == nullptr) {
-        return;
+        assert(false && "transaction_guard::rollback() on ended (or dropped) transaction");
+        std::terminate();
     }
-
     _db->prepare("ROLLBACK").run_to_completion();
+    drop();
 }
