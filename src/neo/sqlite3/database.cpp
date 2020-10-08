@@ -30,8 +30,7 @@ std::optional<database> database::open(const string& db_name, std::error_code& e
 }
 
 std::optional<statement> database::prepare(string_view query, std::error_code& ec) noexcept {
-    ec = {};
-    statement       ret;
+    ec                       = {};
     const char*     str_tail = nullptr;
     ::sqlite3_stmt* stmt     = nullptr;
     set_error_code(ec,
@@ -43,8 +42,7 @@ std::optional<statement> database::prepare(string_view query, std::error_code& e
     if (ec) {
         return std::nullopt;
     }
-    ret._stmt_ptr = stmt;
-    return ret;
+    return statement(std::move(stmt));
 }
 
 void database::exec(const std::string& code) {

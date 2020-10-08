@@ -40,13 +40,13 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate rows") {
     auto it   = rows.begin();
     auto stop = rows.end();
     CHECK(it != stop);
-    auto& row1 = *it;
+    auto row1 = *it;
     CHECK((row1.unpack<int, int, int>()) == std::tuple(1, 2, 3));
     ++it;
-    auto& row2 = *it;
+    auto row2 = *it;
     CHECK((row2.unpack<int, int, int>()) == std::tuple(4, 5, 6));
     ++it;
-    CHECK(it.is_end());
+    CHECK(it.at_end());
     CHECK(it == stop);
 }
 

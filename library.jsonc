@@ -1,3 +1,6 @@
 {
-    "name": "sqlite3"
+    "name": "sqlite3",
+    "uses": [
+        "neo/fun"
+    ]
 }

@@ -28,14 +28,14 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic iteration") {
     CHECK_NOTHROW(*iter);
     CHECK(iter != stop);
     {
-        auto& row = *iter;
+        auto row = *iter;
         CHECK(row[0].as_integer() == 1);
         CHECK(row[1].as_integer() == 2);
         CHECK(row[2].as_integer() == 3);
         ++iter;
     }
     {
-        auto& row = *iter;
+        auto row = *iter;
         CHECK(row[0].as_integer() == 4);
         CHECK(row[1].as_integer() == 5);
         CHECK(row[2].as_integer() == 6);

@@ -12,7 +12,7 @@ std::optional<std::tuple<Ts...>> unpack_next_opt(statement& st) {
     if (status != statement::more) {
         return std::nullopt;
     }
-    return st.row.unpack<Ts...>();
+    return st.row().unpack<Ts...>();
 }
 
 template <typename... Ts>
