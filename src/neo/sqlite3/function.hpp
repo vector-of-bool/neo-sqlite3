@@ -3,20 +3,17 @@
 #include <neo/sqlite3/database.hpp>
 #include <neo/sqlite3/value_ref.hpp>
 
-#include <cassert>
+#include <neo/assert.hpp>
+
 #include <functional>
 #include <memory>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
-namespace neo::sqlite3 {
-
-namespace raw {
-
 struct sqlite3_context;
 
-}  // namespace raw
+namespace neo::sqlite3 {
 
 namespace detail {
 
@@ -57,20 +54,19 @@ struct infer_argtypes<Func, std::void_t<decltype(&std::decay_t<Func>::operator()
 
 class fn_wrapper_base {
 public:
-    void invoke(raw::sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) {
-        do_invoke(ctx, argc, argv);
-    }
+    void invoke(sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) noexcept;
 
     virtual ~fn_wrapper_base() = default;
 
 protected:
-    virtual void do_invoke(raw::sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) = 0;
+    virtual void do_invoke(sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) = 0;
+    virtual int  arg_count() const noexcept                                           = 0;
 
-    void set_result(raw::sqlite3_context* ctx, null_t) noexcept;
-    void set_result(raw::sqlite3_context* ctx, int) noexcept;
-    void set_result(raw::sqlite3_context* ctx, std::int64_t) noexcept;
-    void set_result(raw::sqlite3_context* ctx, double) noexcept;
-    void set_result(raw::sqlite3_context* ctx, std::string_view) noexcept;
+    void set_result(sqlite3_context* ctx, null_t) noexcept;
+    void set_result(sqlite3_context* ctx, int) noexcept;
+    void set_result(sqlite3_context* ctx, std::int64_t) noexcept;
+    void set_result(sqlite3_context* ctx, double) noexcept;
+    void set_result(sqlite3_context* ctx, std::string_view) noexcept;
 };
 
 template <typename Func, typename ArgTypesTag>
@@ -97,9 +93,8 @@ private:
         return std::tuple<ArgTypes...>(_get_arg<ArgTypes>(argv[Is])...);
     }
 
-    void do_invoke(raw::sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) override {
+    void do_invoke(sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) override {
         // Unpack the SQLite arguments into a tuple
-        assert(argc == sizeof...(ArgTypes));
         auto args_tup = _get_args(argv, std::index_sequence_for<ArgTypes...>());
         // Do the call
         using result_type = std::invoke_result_t<Func, ArgTypes...>;
@@ -111,6 +106,8 @@ private:
             set_result(ctx, result);
         }
     }
+
+    int arg_count() const noexcept override { return sizeof...(ArgTypes); }
 };
 
 void register_function(raw::sqlite3*                    db,

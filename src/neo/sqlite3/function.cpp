@@ -5,6 +5,8 @@
 #include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/value_ref.hpp>
 
+#include <neo/ufmt.hpp>
+
 #include <array>
 
 using namespace neo::sqlite3;
@@ -26,32 +28,30 @@ void invoke_fn_wrapper_shared_ptr(::sqlite3_context* context,
                                   ::sqlite3_value**  values) noexcept {
     auto  udata_ptr      = ::sqlite3_user_data(context);
     auto& fn_wrapper_ptr = *get_fn_wrapper_ptr(udata_ptr);
-    fn_wrapper_ptr.invoke(reinterpret_cast<raw::sqlite3_context*>(context),
+    fn_wrapper_ptr.invoke(reinterpret_cast<sqlite3_context*>(context),
                           nargs,
                           reinterpret_cast<raw::sqlite3_value**>(values));
 }
 
 }  // namespace
 
-void detail::fn_wrapper_base::set_result(raw::sqlite3_context* ctx_, null_t) noexcept {
-    auto context = reinterpret_cast<::sqlite3_context*>(ctx_);
-    ::sqlite3_result_null(context);
+void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, null_t) noexcept {
+    ::sqlite3_result_null(ctx);
 }
 
-void detail::fn_wrapper_base::set_result(raw::sqlite3_context* ctx_, int n) noexcept {
-    auto context = reinterpret_cast<::sqlite3_context*>(ctx_);
-    ::sqlite3_result_int(context, n);
+void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, int n) noexcept {
+    ::sqlite3_result_int(ctx, n);
 }
 
-void detail::fn_wrapper_base::set_result(raw::sqlite3_context* ctx, std::int64_t i) noexcept {
-    ::sqlite3_result_int64(reinterpret_cast<::sqlite3_context*>(ctx), i);
+void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, std::int64_t i) noexcept {
+    ::sqlite3_result_int64(ctx, i);
 }
 
-void detail::fn_wrapper_base::set_result(raw::sqlite3_context* ctx_, double d) noexcept {
-    ::sqlite3_result_double(reinterpret_cast<::sqlite3_context*>(ctx_), d);
+void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, double d) noexcept {
+    ::sqlite3_result_double(ctx, d);
 }
 
-void detail::fn_wrapper_base::set_result(raw::sqlite3_context* ctx, std::string_view str) noexcept {
+void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, std::string_view str) noexcept {
     ::sqlite3_result_text64(reinterpret_cast<::sqlite3_context*>(ctx),
                             str.data(),
                             str.size(),
@@ -84,9 +84,31 @@ void detail::register_function(raw::sqlite3*                            db_,
                                        &destroy_fn_wrapper_shared_ptr);
     auto ec = to_error_code(rc);
     throw_if_error(ec,
-                   "Failure while creating a scalar function '"s + name + "'"s,
+                   ufmt("Error while creating a scalar function '{}'", name),
                    ::sqlite3_errmsg(db));
     // Our shared_ptr is now in the care of SQLite. It will call our destroy
     // callback when needed.
     wrapper.release();
+}
+
+void detail::fn_wrapper_base::invoke(sqlite3_context*     ctx,
+                                     int                  argc,
+                                     raw::sqlite3_value** argv) noexcept {
+    if (argc != this->arg_count()) {
+        ::sqlite3_result_error(ctx,
+                               ufmt("Incorrect number of arguments passed to custom SQLite "
+                                    "function (Expected {}, but got {})",
+                                    this->arg_count(),
+                                    argc)
+                                   .data(),
+                               -1);
+    }
+    try {
+        this->do_invoke(ctx, argc, argv);
+    } catch (const std::exception& e) {
+        ::sqlite3_result_error(ctx, e.what(), -1);
+    } catch (...) {
+        ::sqlite3_result_error(
+            ctx, "[neo-sqlite3]: Non-std::exception type was thrown by custom function", -1);
+    }
 }
