@@ -3,6 +3,7 @@
 #include <neo/sqlite3/c/sqlite3.h>
 
 #include <neo/assert.hpp>
+#include <neo/ufmt.hpp>
 
 #include <cassert>
 #include <iostream>
@@ -23,6 +24,11 @@ class sqlite3_category : public std::error_category {
 };
 
 }  // namespace
+
+neo::sqlite3::sqlite3_error::sqlite3_error(std::error_code  ec,
+                                           std::string_view message,
+                                           std::string_view sup) noexcept
+    : std::system_error(ec, neo::ufmt("{} [{}]", message, sup)) {}
 
 const std::error_category& neo::sqlite3::error_category() noexcept {
     static sqlite3_category inst;

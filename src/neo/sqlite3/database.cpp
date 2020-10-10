@@ -3,6 +3,8 @@
 #include <neo/sqlite3/blob.hpp>
 #include <neo/sqlite3/c/sqlite3.h>
 
+#include <neo/ufmt.hpp>
+
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -29,6 +31,15 @@ std::optional<database> database::open(const string& db_name, std::error_code& e
     return ret;
 }
 
+database database::open(const std::string& s) {
+    std::error_code         ec;
+    std::optional<database> ret = open(s, ec);
+    if (ec) {
+        throw_error(ec, ufmt("Failed to open SQLite database [{}]", s), "[failed]");
+    }
+    return std::move(*ret);
+}
+
 std::optional<statement> database::prepare(string_view query, std::error_code& ec) noexcept {
     ec                       = {};
     const char*     str_tail = nullptr;
@@ -43,6 +54,15 @@ std::optional<statement> database::prepare(string_view query, std::error_code& e
         return std::nullopt;
     }
     return statement(std::move(stmt));
+}
+
+statement database::prepare(std::string_view query) {
+    std::error_code ec;
+    auto            ret = prepare(query, ec);
+    if (ec) {
+        throw_error(ec, ufmt("Failed to prepare statement [[{}]]", query), error_message());
+    }
+    return std::move(*ret);
 }
 
 void database::exec(const std::string& code) {
@@ -82,8 +102,7 @@ blob database::open_blob(const string& db,
     auto            ret = open_blob(db, table, column, rowid, ec);
     if (ec) {
         throw_error(ec,
-                    "Failed to open BLOB in " + db + "." + table + "." + column + " at rowid "
-                        + std::to_string(rowid),
+                    ufmt("Failed to open BLOB in {}.{}.{} at rowid {}", db, table, column, rowid),
                     error_message());
     }
     return std::move(*ret);

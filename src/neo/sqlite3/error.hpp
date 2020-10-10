@@ -273,8 +273,7 @@ constexpr errcond error_code_condition(errc ec) {
 
 class sqlite3_error : public std::system_error {
 public:
-    sqlite3_error(std::error_code ec, std::string_view message, std::string_view sup)
-        : system_error(ec, std::string(message) + " [" + std::string(sup) + "]") {}
+    sqlite3_error(std::error_code ec, std::string_view message, std::string_view sup) noexcept;
 
     virtual std::error_condition condition() const noexcept = 0;
     virtual std::error_code      code() const noexcept      = 0;

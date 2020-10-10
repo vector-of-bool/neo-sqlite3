@@ -36,26 +36,12 @@ public:
     }
 
     static std::optional<database> open(const std::string& s, std::error_code& ec) noexcept;
-    static database                open(const std::string& s) {
-        std::error_code         ec;
-        std::optional<database> ret = open(s, ec);
-        if (ec) {
-            throw_error(ec, "Failed to open SQLite database [" + std::string(s) + "]", "[failed]");
-        }
-        return std::move(*ret);
-    }
+    static database                open(const std::string& s);
 
     static database create_memory_db() { return open(":memory:"); }
 
     std::optional<statement> prepare(std::string_view query, std::error_code& ec) noexcept;
-    statement                prepare(std::string_view query) {
-        std::error_code ec;
-        auto            ret = prepare(query, ec);
-        if (ec) {
-            throw_error(ec, "Failed to prepare statement: " + std::string(query), error_message());
-        }
-        return std::move(*ret);
-    }
+    statement                prepare(std::string_view query);
 
     void exec(const std::string& code);
 
