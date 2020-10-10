@@ -4,7 +4,20 @@
 
 namespace neo::sqlite3 {
 
-enum class errcond {
+/**
+ * @brief Error conditions from SQLite.
+ *
+ * These are error *conditions* and are therefore more generic than specific
+ * error codes. Multiple error codes may belong to a single error condition,
+ * and comparing an std::error_code with std::error_condition with the
+ * sqlite3_cateogry() will comparing basd on that mapping.
+ *
+ * The official SQLite documentation explains the relationship between between
+ * these error enumeration types: https://sqlite.org/rescode.html
+ *
+ * In this library, 'errcond' corresponds to the "primary result codes".
+ */
+enum class errcond : int {
     abort          = 4,
     auth           = 23,
     busy           = 5,
@@ -38,9 +51,20 @@ enum class errcond {
     warning        = 28,
 };
 
-/// Enumeration of SQLite error codes. See the SQLite documentation for an
-/// explanation of each
-enum class errc {
+/**
+ * @brief Error codes from SQLite.
+ *
+ * These are error *conditions* and are therefore more generic than specific
+ * error codes. Multiple error codes may belong to a single error condition,
+ * and comparing an std::error_code with std::error_condition with the
+ * sqlite3_cateogry() will comparing basd on that mapping.
+ *
+ * The official SQLite documentation explains the relationship between between
+ * these error enumeration types: https://sqlite.org/rescode.html
+ *
+ * In this library, 'errc' corresponds to the "extended result codes".
+ */
+enum class errc : int {
     // The base result codes are also still extended error codes.
     abort          = 4,
     auth           = 23,
@@ -141,13 +165,38 @@ inline std::error_condition make_error_condition(errcond cond) noexcept {
     return std::error_condition(static_cast<int>(cond), error_category());
 }
 
+/**
+ * @brief Create a std::error_code from an integral result code value returned from a SQLite API
+ *
+ * @param sqlite_errc An integral result code returned by a SQLite C API
+ * @return std::error_code A new error_code object of the sqlite3_category
+ */
 inline std::error_code to_error_code(int sqlite_errc) noexcept {
     return make_error_code(static_cast<errc>(sqlite_errc));
 }
+
+/**
+ * @brief Replace the value of 'ec' with the result of a SQLite C API.
+ *
+ * This is often used while calling the C API inline, ex:
+ *
+ *  std::error_code ec;
+ *  set_error_code(ec, ::sqlite3_prepare_v2(...));
+ *
+ * @param ec The error code object to replace
+ * @param sqlite_errc A SQLite C API result code value
+ */
 inline void set_error_code(std::error_code& ec, int sqlite_errc) {
     ec = to_error_code(sqlite_errc);
 }
 
+/**
+ * @brief Map a SQLite extended error code (errc) to its more generic error
+ * condition
+ *
+ * @param ec An extended error code from errc
+ * @return errcond The generic condition that contains the given error code.
+ */
 constexpr errcond error_code_condition(errc ec) {
     switch (ec) {
     case errc::ioerr:
@@ -271,6 +320,9 @@ constexpr errcond error_code_condition(errc ec) {
     return static_cast<errcond>(ec);
 }
 
+/**
+ * @brief Base class of all exceptions thrown by neo-sqlite3.
+ */
 class sqlite3_error : public std::system_error {
 public:
     sqlite3_error(std::error_code ec, std::string_view message, std::string_view sup) noexcept;
@@ -279,6 +331,14 @@ public:
     virtual std::error_code      code() const noexcept      = 0;
 };
 
+/**
+ * @brief Base class template of all exceptions originating from the SQLite library
+ *
+ * This is an abstract class to represent the more generic form of the extended
+ * error codes.
+ *
+ * @tparam Cond The error condition to represent
+ */
 template <errcond Cond>
 struct errcond_error : sqlite3_error {
     using sqlite3_error::sqlite3_error;
@@ -286,6 +346,14 @@ struct errcond_error : sqlite3_error {
     std::error_condition condition() const noexcept override { return make_error_condition(Cond); }
 };
 
+/**
+ * @brief Concrete class template of all exceptions originating from the SQLite library.
+ *
+ * This class inherits from 'errcond_error<Cond>', where 'Cond' is the error
+ * condition that contains the 'Code' of this class.
+ *
+ * @tparam Code The error code represented by this exception.
+ */
 template <errc Code>
 struct errc_error : errcond_error<error_code_condition(Code)> {
     errc_error(std::string_view message, std::string_view sup)
@@ -294,9 +362,25 @@ struct errc_error : errcond_error<error_code_condition(Code)> {
     std::error_code code() const noexcept override { return make_error_code(Code); }
 };
 
+/**
+ * @brief Given an error code in the sqlite3_category(), throw a corresponding exception.
+ *
+ * The 'errc_error' exception class template can be instantiated for any errc. This function is a
+ * utility that will dynamically select the correct 'errc_error' class type and throw a new instance
+ * of that class.
+ *
+ * @param ec The error code that should be thrown
+ * @param message The main message of the error
+ * @param sup Supplementary details of the error
+ */
 [[noreturn]] void
 throw_error(const std::error_code& ec, std::string_view message, std::string_view sup);
 
+/**
+ * @brief Conditionally throw an exception with 'throw_error'
+ *
+ * An exception will only be thrown if the given error_code is non-zero.
+ */
 inline void
 throw_if_error(const std::error_code& ec, std::string_view message, std::string_view sup) {
     if (ec) {
@@ -304,13 +388,19 @@ throw_if_error(const std::error_code& ec, std::string_view message, std::string_
     }
 }
 
-using busy_error       = errcond_error<errcond::busy>;
+/// Convenience alias for errcond_error<errcond::busy> (Database is busy and cannot be written)
+using busy_error = errcond_error<errcond::busy>;
+/// Convenience alias for errcond_error<errcond::constraint> (Any generic constraint violation)
 using constraint_error = errcond_error<errcond::constraint>;
 
-using constraint_unique_error      = errc_error<errc::constraint_unique>;
-using constraint_not_null_error    = errc_error<errc::constraint_not_null>;
+/// Convenience alias for errc_error representing a UNIQUE constraint violation
+using constraint_unique_error = errc_error<errc::constraint_unique>;
+/// Convenience alias for errc_error representing a NOT NULL constraint violation
+using constraint_not_null_error = errc_error<errc::constraint_not_null>;
+/// Convenience alias for errc_error representing a REFERENCES constraint violation
 using constraint_foreign_key_error = errc_error<errc::constraint_foreign_key>;
-using constraint_check_error       = errc_error<errc::constraint_check>;
+/// Convenience alias for errc_error representing a CHECK constraint violation
+using constraint_check_error = errc_error<errc::constraint_check>;
 
 }  // namespace neo::sqlite3
 
