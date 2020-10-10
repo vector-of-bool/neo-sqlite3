@@ -50,15 +50,15 @@ public:
     std::string_view name() const noexcept;
 
     /// The original name of the column, regardless of the AS
-    NEO_SQLITE3_COLUMN_METADATA_FUNC
+    NEO_SQLITE3_COLUMN_METADATA_API
     std::string_view origin_name() const noexcept;
 
     /// The name of the table that owns the column
-    NEO_SQLITE3_COLUMN_METADATA_FUNC
+    NEO_SQLITE3_COLUMN_METADATA_API
     std::string_view table_name() const noexcept;
 
     /// The name of the database that owns the column
-    NEO_SQLITE3_COLUMN_METADATA_FUNC
+    NEO_SQLITE3_COLUMN_METADATA_API
     std::string_view database_name() const noexcept;
 };
 
