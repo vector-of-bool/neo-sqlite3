@@ -1,3 +1,4 @@
+#include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/transaction.hpp>
 
 #include "./tests.inl"

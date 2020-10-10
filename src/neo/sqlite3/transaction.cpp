@@ -1,6 +1,7 @@
 #include "./transaction.hpp"
 
 #include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/statement.hpp>
 
 #include <exception>
 #include <iostream>
