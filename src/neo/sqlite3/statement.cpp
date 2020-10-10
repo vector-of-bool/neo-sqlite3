@@ -4,10 +4,6 @@
 
 #include <neo/sqlite3/c/sqlite3.h>
 
-#include <cassert>
-#include <iostream>
-#include <stdexcept>
-
 using namespace neo::sqlite3;
 
 void statement::_destroy() noexcept {
@@ -38,13 +34,12 @@ statement::state statement::step(std::error_code& ec) noexcept {
     if (result == SQLITE_ROW) {
         return state::more;
     }
-    if (result == SQLITE_MISUSE) {
-        std::cerr << "neo::sqlite3 : The application has requested the advancement of a SQLite "
-                     "statement while it is in an invalid state to do so. This is an issue in the "
-                     "application or library, and it is not the fault of SQLite or of any user "
-                     "action. We cannot safely continue, so the program will now be terminated.\n";
-        std::terminate();
-    }
+    neo_assert_always(expects,
+                      result != SQLITE_MISUSE,
+                      "neo::sqlite3 : The application has requested the advancement of a SQLite "
+                      "statement while it is in an invalid state to do so. This is an issue in the "
+                      "application or library, and it is not the fault of SQLite or of any user "
+                      "action. We cannot safely continue, so the program will now be terminated.");
     ec = to_error_code(result);
     return state::error;
 }
@@ -55,11 +50,12 @@ bool statement::is_busy() const noexcept { return ::sqlite3_stmt_busy(_stmt_ptr)
 
 value_ref row_access::operator[](int idx) const noexcept {
     auto col_count = ::sqlite3_column_count(OWNER_STMT_PTR);
-    assert(
-        _owner.get().is_busy()
-        && "Attempt to access value from a row in an idle statement. "
-           "`step()` was never called, or the statement needs to be `reset()`.");
-    assert(idx < col_count && "Access to column beyond-the-end");
+    neo_assert(expects,
+               _owner.get().is_busy(),
+               "Attemptd to access value from a row in and idle statement. Either `step()` was "
+               "never called, or the statement needs to be `reset()`",
+               idx);
+    neo_assert(expects, idx < col_count, "Access to column beyond-the-end", idx, col_count);
     auto val = ::sqlite3_column_value(OWNER_STMT_PTR, idx);
     return value_ref::from_ptr(reinterpret_cast<raw::sqlite3_value*>(val));
 }

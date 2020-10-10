@@ -2,8 +2,7 @@
 
 #include <neo/sqlite3/c/sqlite3.h>
 
-#include <cassert>
-#include <stdexcept>
+#include <neo/assert.hpp>
 
 using namespace neo::sqlite3;
 
@@ -22,9 +21,9 @@ value_type value_ref::type() const noexcept {
     case SQLITE_TEXT:
         return value_type::text;
     }
-    assert(false
-           && "Unknown return value from ::sqlite3_value_type. This is a bug in neo-sqlite3.");
-    std::terminate();
+    neo_assert_always(ensures,
+                      false,
+                      "Unknown value from ::sqlite3_value_type(). This is a bug in neo-sqlite3");
 }
 
 std::int64_t value_ref::as_integer() const noexcept { return ::sqlite3_value_int64(MY_VALUE_PTR); }

@@ -2,10 +2,8 @@
 
 #include <neo/sqlite3/database.hpp>
 
-#include <cassert>
 #include <exception>
 #include <iostream>
-#include <stdexcept>
 
 using namespace neo::sqlite3;
 
@@ -43,19 +41,17 @@ transaction_guard::~transaction_guard() {
 }
 
 void transaction_guard::commit() {
-    if (_db == nullptr) {
-        assert(false && "transaction_guard::commit() on ended (or dropped) transaction");
-        std::terminate();
-    }
+    neo_assert_always(expects,
+                      _db != nullptr,
+                      "transaction_guard::commit() on ended (or dropped) transaction");
     _db->prepare("COMMIT").run_to_completion();
     drop();
 }
 
 void transaction_guard::rollback() {
-    if (_db == nullptr) {
-        assert(false && "transaction_guard::rollback() on ended (or dropped) transaction");
-        std::terminate();
-    }
+    neo_assert_always(expects,
+                      _db != nullptr,
+                      "transaction_guard::rollback() on an ended (or dropped) transaction");
     _db->prepare("ROLLBACK").run_to_completion();
     drop();
 }

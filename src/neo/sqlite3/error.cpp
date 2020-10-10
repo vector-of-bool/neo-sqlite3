@@ -131,9 +131,10 @@ const std::error_category& neo::sqlite3::error_category() noexcept {
         CASE(warning_autoindex);
 #undef CASE
     }
-    // throw sqlite3_error(ec, std::move(message), sup);
-    std::cerr << "Invalid neo::sqlite3::errc value passed to neo::sqlite3::throw_error (Value is '"
-              << ec.message() << "'\n";
-    assert(false && "Invalid errc value passed to neo::sqlite3::throw_error");
-    std::terminate();
+    neo_assert_always(expects,
+                      false,
+                      "Invalid errc value passed to neo::sqlite3::throw_error",
+                      ec.message(),
+                      ec.value(),
+                      ec.category().name());
 }
