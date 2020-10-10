@@ -27,7 +27,7 @@ std::optional<database> database::open(const string& db_name, std::error_code& e
     ::sqlite3_extended_result_codes(new_db, 1);
 
     database ret;
-    ret._ptr = reinterpret_cast<raw::sqlite3*>(new_db);
+    ret._ptr = reinterpret_cast<::sqlite3*>(new_db);
     return ret;
 }
 
@@ -73,7 +73,7 @@ void database::exec(const std::string& code) {
     }
 }
 
-database::~database() { ::sqlite3_close(MY_DB_PTR); }
+void database::_close() noexcept { ::sqlite3_close(_ptr); }
 
 bool database::is_transaction_active() const noexcept {
     return ::sqlite3_get_autocommit(MY_DB_PTR) == 0;

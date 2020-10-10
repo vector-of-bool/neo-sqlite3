@@ -57,7 +57,7 @@ value_ref row_access::operator[](int idx) const noexcept {
                idx);
     neo_assert(expects, idx < col_count, "Access to column beyond-the-end", idx, col_count);
     auto val = ::sqlite3_column_value(OWNER_STMT_PTR, idx);
-    return value_ref::from_ptr(reinterpret_cast<raw::sqlite3_value*>(val));
+    return value_ref::from_ptr(reinterpret_cast<::sqlite3_value*>(val));
 }
 
 void binding_access::binding::bind(double d) {

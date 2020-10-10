@@ -8,31 +8,44 @@
 #include <system_error>
 #include <utility>
 
-namespace neo::sqlite3 {
-
-namespace raw {
-
 struct sqlite3;
 
-}  // namespace raw
+namespace neo::sqlite3 {
 
 class blob;
 
 enum class fn_flags;
 
+/**
+ * @brief A SQLite database connection.
+ *
+ */
 class database {
-    raw::sqlite3* _ptr;
+    ::sqlite3* _ptr;
 
     database() = default;
 
+    void _close() noexcept;
+
 public:
-    ~database();
     database(database&& other) noexcept
         : _ptr(std::exchange(other._ptr, nullptr)) {}
 
+    explicit database(::sqlite3*&& ptr) noexcept
+        : _ptr(std::exchange(ptr, nullptr)) {}
+
     database& operator=(database&& other) noexcept {
-        std::swap(other._ptr, _ptr);
+        if (_ptr) {
+            _close();
+        }
+        _ptr = std::exchange(other._ptr, nullptr);
         return *this;
+    }
+
+    ~database() {
+        if (_ptr) {
+            _close();
+        }
     }
 
     static std::optional<database> open(const std::string& s, std::error_code& ec) noexcept;

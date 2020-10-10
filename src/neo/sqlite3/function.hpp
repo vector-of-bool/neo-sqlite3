@@ -54,13 +54,13 @@ struct infer_argtypes<Func, std::void_t<decltype(&std::decay_t<Func>::operator()
 
 class fn_wrapper_base {
 public:
-    void invoke(sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) noexcept;
+    void invoke(sqlite3_context* ctx, int argc, sqlite3_value** argv) noexcept;
 
     virtual ~fn_wrapper_base() = default;
 
 protected:
-    virtual void do_invoke(sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) = 0;
-    virtual int  arg_count() const noexcept                                           = 0;
+    virtual void do_invoke(sqlite3_context* ctx, int argc, sqlite3_value** argv) = 0;
+    virtual int  arg_count() const noexcept                                      = 0;
 
     void set_result(sqlite3_context* ctx, null_t) noexcept;
     void set_result(sqlite3_context* ctx, int) noexcept;
@@ -83,17 +83,17 @@ private:
     Func _fn;
 
     template <typename T>
-    T _get_arg(raw::sqlite3_value* ptr) {
+    T _get_arg(sqlite3_value* ptr) {
         auto ref = value_ref::from_ptr(ptr);
         return ref.as<T>();
     }
 
     template <std::size_t... Is>
-    std::tuple<ArgTypes...> _get_args(raw::sqlite3_value** argv, std::index_sequence<Is...>) {
+    std::tuple<ArgTypes...> _get_args(sqlite3_value** argv, std::index_sequence<Is...>) {
         return std::tuple<ArgTypes...>(_get_arg<ArgTypes>(argv[Is])...);
     }
 
-    void do_invoke(sqlite3_context* ctx, int argc, raw::sqlite3_value** argv) override {
+    void do_invoke(sqlite3_context* ctx, int argc, sqlite3_value** argv) override {
         // Unpack the SQLite arguments into a tuple
         auto args_tup = _get_args(argv, std::index_sequence_for<ArgTypes...>());
         // Do the call
@@ -110,7 +110,7 @@ private:
     int arg_count() const noexcept override { return sizeof...(ArgTypes); }
 };
 
-void register_function(raw::sqlite3*                    db,
+void register_function(::sqlite3*                         db,
                        const std::string&               name,
                        std::unique_ptr<fn_wrapper_base> ptr,
                        std::size_t                      argc,

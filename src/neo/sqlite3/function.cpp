@@ -30,7 +30,7 @@ void invoke_fn_wrapper_shared_ptr(::sqlite3_context* context,
     auto& fn_wrapper_ptr = *get_fn_wrapper_ptr(udata_ptr);
     fn_wrapper_ptr.invoke(reinterpret_cast<sqlite3_context*>(context),
                           nargs,
-                          reinterpret_cast<raw::sqlite3_value**>(values));
+                          reinterpret_cast<::sqlite3_value**>(values));
 }
 
 }  // namespace
@@ -59,7 +59,7 @@ void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, std::string_view 
                             SQLITE_UTF8);
 }
 
-void detail::register_function(raw::sqlite3*                            db_,
+void detail::register_function(::sqlite3*                               db_,
                                const std::string&                       name,
                                std::unique_ptr<detail::fn_wrapper_base> wrapper,
                                std::size_t                              argc,
@@ -91,9 +91,9 @@ void detail::register_function(raw::sqlite3*                            db_,
     wrapper.release();
 }
 
-void detail::fn_wrapper_base::invoke(sqlite3_context*     ctx,
-                                     int                  argc,
-                                     raw::sqlite3_value** argv) noexcept {
+void detail::fn_wrapper_base::invoke(sqlite3_context*  ctx,
+                                     int               argc,
+                                     ::sqlite3_value** argv) noexcept {
     if (argc != this->arg_count()) {
         ::sqlite3_result_error(ctx,
                                ufmt("Incorrect number of arguments passed to custom SQLite "
