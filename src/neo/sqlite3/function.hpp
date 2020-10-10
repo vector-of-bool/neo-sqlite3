@@ -94,6 +94,11 @@ private:
     }
 
     void do_invoke(sqlite3_context* ctx, int argc, sqlite3_value** argv) override {
+        neo_assert(invariant,
+                   argc == arg_count(),
+                   "Incorrect number of arguments passed through to custom function",
+                   argc,
+                   this->arg_count());
         // Unpack the SQLite arguments into a tuple
         auto args_tup = _get_args(argv, std::index_sequence_for<ArgTypes...>());
         // Do the call
@@ -110,7 +115,7 @@ private:
     int arg_count() const noexcept override { return sizeof...(ArgTypes); }
 };
 
-void register_function(::sqlite3*                         db,
+void register_function(::sqlite3*                       db,
                        const std::string&               name,
                        std::unique_ptr<fn_wrapper_base> ptr,
                        std::size_t                      argc,
