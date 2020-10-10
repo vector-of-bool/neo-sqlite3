@@ -1,4 +1,5 @@
 #include <neo/sqlite3/blob.hpp>
+#include <neo/sqlite3/statement.hpp>
 
 #include "./tests.inl"
 

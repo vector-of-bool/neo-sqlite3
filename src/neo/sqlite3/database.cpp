@@ -33,19 +33,7 @@ database database::open(const std::string& s) {
 }
 
 std::optional<statement> database::prepare(string_view query, std::error_code& ec) noexcept {
-    ec                       = {};
-    const char*     str_tail = nullptr;
-    ::sqlite3_stmt* stmt     = nullptr;
-    set_error_code(ec,
-                   ::sqlite3_prepare_v2(c_ptr(),
-                                        query.data(),
-                                        static_cast<int>(query.size()),
-                                        &stmt,
-                                        &str_tail));
-    if (ec) {
-        return std::nullopt;
-    }
-    return statement(std::move(stmt));
+    return statement::prepare_within(c_ptr(), query, ec);
 }
 
 statement database::prepare(std::string_view query) {

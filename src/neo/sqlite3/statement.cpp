@@ -6,6 +6,19 @@
 
 using namespace neo::sqlite3;
 
+std::optional<statement>
+statement::prepare_within(::sqlite3* db, std::string_view query, std::error_code& ec) noexcept {
+    const char*     str_tail = nullptr;
+    ::sqlite3_stmt* stmt     = nullptr;
+
+    ec = to_error_code(
+        ::sqlite3_prepare_v2(db, query.data(), static_cast<int>(query.size()), &stmt, &str_tail));
+    if (ec) {
+        return std::nullopt;
+    }
+    return statement(std::move(stmt));
+}
+
 void statement::_destroy() noexcept {
     ::sqlite3_finalize(c_ptr());
     _stmt_ptr = nullptr;

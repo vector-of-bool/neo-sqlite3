@@ -13,6 +13,7 @@
 #include <type_traits>
 
 struct sqlite3_stmt;
+struct sqlite3;
 
 namespace neo::sqlite3 {
 
@@ -258,10 +259,16 @@ public:
     explicit statement(sqlite3_stmt*&& ptr) noexcept
         : _stmt_ptr(std::exchange(ptr, nullptr)) {}
 
-    statement(statement&& o) noexcept { _stmt_ptr = std::exchange(o._stmt_ptr, nullptr); }
+    static std::optional<statement>
+    prepare_within(::sqlite3* db, std::string_view query, std::error_code& ec) noexcept;
+
+    statement(statement&& o) noexcept { _stmt_ptr = o.release(); }
 
     statement& operator=(statement&& o) noexcept {
-        std::swap(o._stmt_ptr, _stmt_ptr);
+        if (_stmt_ptr) {
+            _destroy();
+        }
+        _stmt_ptr = o.release();
         return *this;
     }
 
