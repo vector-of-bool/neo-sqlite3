@@ -16,24 +16,18 @@ void statement::reset() noexcept {
     ::sqlite3_reset(c_ptr());
 }
 
-statement::state statement::step() {
+errc statement::step() {
     std::error_code ec;
     auto            result = step(ec);
-    if (ec) {
+    if (result != errc::done && result != errc::row) {
         auto db = ::sqlite3_db_handle(c_ptr());
         throw_error(ec, "Failure while executing statement", ::sqlite3_errmsg(db));
     }
-    return result;
+    return errc{result};
 }
 
-statement::state statement::step(std::error_code& ec) noexcept {
+errc statement::step(std::error_code& ec) noexcept {
     auto result = ::sqlite3_step(c_ptr());
-    if (result == SQLITE_DONE) {
-        return state::done;
-    }
-    if (result == SQLITE_ROW) {
-        return state::more;
-    }
     neo_assert_always(expects,
                       result != SQLITE_MISUSE,
                       "neo::sqlite3 : The application has requested the advancement of a SQLite "
@@ -41,7 +35,7 @@ statement::state statement::step(std::error_code& ec) noexcept {
                       "application or library, and it is not the fault of SQLite or of any user "
                       "action. We cannot safely continue, so the program will now be terminated.");
     ec = to_error_code(result);
-    return state{result};
+    return errc{result};
 }
 
 bool statement::is_busy() const noexcept { return ::sqlite3_stmt_busy(_stmt_ptr) != 0; }

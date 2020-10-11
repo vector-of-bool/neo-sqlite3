@@ -20,8 +20,7 @@ namespace neo::sqlite3 {
  */
 template <typename... Ts>
 std::optional<std::tuple<Ts...>> unpack_next_opt(statement& st, std::error_code& ec) noexcept {
-    auto status = st.step();
-    ec          = make_error_code(errc{status});
+    auto status = st.step(ec);
     if (status != statement::more) {
         return std::nullopt;
     }

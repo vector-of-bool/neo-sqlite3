@@ -235,18 +235,18 @@ public:
     }
 };
 
+/**
+ * @brief A prepared statement returns by database{_ref}::prepare
+ *
+ * When the object is destroyed, the statement will be freed.
+ */
 class statement {
     sqlite3_stmt* _stmt_ptr = nullptr;
     void          _destroy() noexcept;
 
 public:
-    enum class state : int {
-        more = 100,
-        done = 101,
-    };
-
-    static constexpr auto done = state::done;
-    static constexpr auto more = state::more;
+    static constexpr auto done = errc::done;
+    static constexpr auto more = errc::row;
 
     ~statement() {
         // This is defined inline so that compilers have greater visibility to DCE this branch
@@ -273,8 +273,8 @@ public:
     [[nodiscard]] sqlite3_stmt* c_ptr() const noexcept { return _stmt_ptr; }
     [[nodiscard]] sqlite3_stmt* release() noexcept { return std::exchange(_stmt_ptr, nullptr); }
 
-    state               step();
-    [[nodiscard]] state step(std::error_code& ec) noexcept;
+    errc               step();
+    [[nodiscard]] errc step(std::error_code& ec) noexcept;
 
     void run_to_completion() {
         while (step() == more) {

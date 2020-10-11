@@ -52,14 +52,7 @@ template <typename... Ts>
 std::optional<std::tuple<Ts...>> unpack_single_opt(statement& st) {
     std::error_code ec;
     auto            res = unpack_single_opt<Ts...>(st, ec);
-    if (ec == errc::done) {
-        // No data to pull: Okay. Just return nullopt
-        neo_assert(invariant,
-                   !res.has_value(),
-                   "Expected empty result after statement declared completion");
-        return std::nullopt;
-    }
-    if (ec != errc::row) {
+    if (ec != errc::row && ec != errc::done) {
         // No data was pulled, nor are we done. An error:
         throw_error(ec,
                     "Failed to pull a single element for a statement result for unpack_single_opt",

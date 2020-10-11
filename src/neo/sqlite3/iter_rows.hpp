@@ -40,7 +40,7 @@ public:
             : _st(&st) {
             auto rc = st.step();
             neo_assert(invariant,
-                       rc == statement::state::more || rc == statement::state::done,
+                       rc == errc::row || rc == errc::done,
                        "Initial step returned an error");
         }
 
@@ -61,9 +61,7 @@ public:
                        "Advanced of row-iterator with no associated statement");
             neo_assert(expects, !at_end(), "Advance of a finished row-iterator");
             auto rc = _st->step();
-            neo_assert(invariant,
-                       rc == statement::state::more || rc == statement::state::done,
-                       "step() returned an error");
+            neo_assert(invariant, rc == errc::row || rc == errc::done, "step() returned an error");
         }
 
         struct sentinel_type {};
