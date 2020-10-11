@@ -277,7 +277,7 @@ public:
     [[nodiscard]] sqlite3_stmt* c_ptr() const noexcept { return _stmt_ptr; }
     [[nodiscard]] sqlite3_stmt* release() noexcept { return std::exchange(_stmt_ptr, nullptr); }
 
-    [[nodiscard]] state step();
+    state               step();
     [[nodiscard]] state step(std::error_code& ec) noexcept;
 
     void run_to_completion() {
