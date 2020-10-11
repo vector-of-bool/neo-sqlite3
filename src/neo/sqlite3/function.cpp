@@ -102,6 +102,7 @@ void detail::fn_wrapper_base::invoke(sqlite3_context*  ctx,
                                     argc)
                                    .data(),
                                -1);
+        return;
     }
     try {
         this->do_invoke(ctx, argc, argv);
