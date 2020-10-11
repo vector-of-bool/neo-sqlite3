@@ -158,11 +158,13 @@ enum class errc : int {
 [[nodiscard]] const std::error_category& error_category() noexcept;
 
 [[nodiscard]] inline std::error_code make_error_code(errc e) noexcept {
-    return std::error_code(static_cast<int>(e), error_category());
+    static auto& cat = error_category();
+    return std::error_code(static_cast<int>(e), cat);
 }
 
 [[nodiscard]] inline std::error_condition make_error_condition(errcond cond) noexcept {
-    return std::error_condition(static_cast<int>(cond), error_category());
+    static auto& cat = error_category();
+    return std::error_condition(static_cast<int>(cond), cat);
 }
 
 /**
