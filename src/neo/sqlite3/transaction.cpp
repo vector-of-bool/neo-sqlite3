@@ -1,15 +1,14 @@
 #include "./transaction.hpp"
 
 #include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/statement.hpp>
 
-#include <cassert>
+#include <cstdio>
 #include <exception>
-#include <iostream>
-#include <stdexcept>
 
 using namespace neo::sqlite3;
 
-recursive_transaction_guard::recursive_transaction_guard(database& db) {
+recursive_transaction_guard::recursive_transaction_guard(database_ref db) {
     if (!db.is_transaction_active()) {
         // There is no active transaction, so we are the top-most transaction
         // guard. Create an inner transaction guard to track the transaction
@@ -17,13 +16,13 @@ recursive_transaction_guard::recursive_transaction_guard(database& db) {
     }
 }
 
-transaction_guard::transaction_guard(database& db) {
+transaction_guard::transaction_guard(database_ref db)
+    : _db(db.c_ptr()) {
     _n_uncaught_exceptions = std::uncaught_exceptions();
-    _db                    = &db;
     db.prepare("BEGIN").run_to_completion();
 }
 
-transaction_guard::~transaction_guard() {
+transaction_guard::~transaction_guard() noexcept(false) {
     if (_db == nullptr) {
         return;
     }
@@ -33,9 +32,13 @@ transaction_guard::~transaction_guard() {
         try {
             rollback();
         } catch (const std::exception& e) {
-            std::cerr << "An exception occurred while rolling back a SQLite transaction due to "
-                         "another exception. The system may now be in an inconsistent state!\n";
-            std::cerr << "The exception message: " << e.what() << '\n';
+            std::fputs(
+                "An exception occurred while rolling back a SQLite transaction due to another "
+                "exception. The system may now be in an inconsistent state!\n",
+                stderr);
+            std::fputs("The exception message is '", stderr);
+            std::fputs(e.what(), stderr);
+            std::fputs("'\n", stderr);
         }
     } else {
         commit();
@@ -43,19 +46,17 @@ transaction_guard::~transaction_guard() {
 }
 
 void transaction_guard::commit() {
-    if (_db == nullptr) {
-        assert(false && "transaction_guard::commit() on ended (or dropped) transaction");
-        std::terminate();
-    }
-    _db->prepare("COMMIT").run_to_completion();
+    neo_assert_always(expects,
+                      _db != nullptr,
+                      "transaction_guard::commit() on ended (or dropped) transaction");
+    database_ref(_db).prepare("COMMIT").run_to_completion();
     drop();
 }
 
 void transaction_guard::rollback() {
-    if (_db == nullptr) {
-        assert(false && "transaction_guard::rollback() on ended (or dropped) transaction");
-        std::terminate();
-    }
-    _db->prepare("ROLLBACK").run_to_completion();
+    neo_assert_always(expects,
+                      _db != nullptr,
+                      "transaction_guard::rollback() on an ended (or dropped) transaction");
+    database_ref(_db).prepare("ROLLBACK").run_to_completion();
     drop();
 }

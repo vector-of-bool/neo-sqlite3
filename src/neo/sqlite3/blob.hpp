@@ -7,7 +7,7 @@ namespace neo::sqlite3 {
 class database;
 
 class blob {
-    friend class database;
+    friend class database_ref;
 
     void* _ptr = nullptr;
 

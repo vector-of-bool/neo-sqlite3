@@ -4,13 +4,9 @@
 #include <optional>
 #include <string_view>
 
-namespace neo::sqlite3 {
-
-namespace raw {
-
 struct sqlite3_value;
 
-}  // namespace raw
+namespace neo::sqlite3 {
 
 class row_access;
 
@@ -27,9 +23,7 @@ enum class value_type {
 };
 
 class value_ref {
-    friend class row_access;
-
-    raw::sqlite3_value* _value_ptr = nullptr;
+    sqlite3_value* _value_ptr = nullptr;
 
     value_ref() = default;
 
@@ -61,11 +55,8 @@ class value_ref {
     }
 
 public:
-    static value_ref from_ptr(raw::sqlite3_value* p) {
-        value_ref ret;
-        ret._value_ptr = p;
-        return ret;
-    }
+    explicit value_ref(::sqlite3_value* ptr) noexcept
+        : _value_ptr(ptr) {}
 
     [[nodiscard]] value_type type() const noexcept;
 
@@ -82,7 +73,7 @@ public:
     explicit           operator bool() const noexcept { return !is_null(); }
 
     template <typename T>
-    T as() const noexcept {
+    [[nodiscard]] T as() const noexcept {
         return static_cast<T>(_as(type_tag<T>()));
     }
 };

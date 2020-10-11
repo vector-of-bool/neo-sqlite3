@@ -2,72 +2,84 @@
 
 #include <neo/sqlite3/statement.hpp>
 
+#include <neo/assert.hpp>
+#include <neo/iterator_facade.hpp>
+
 #include <cassert>
 #include <iterator>
 
 namespace neo::sqlite3 {
 
+/**
+ * @brief A range over the results of a SQLite statement.
+ *
+ * Dereferencing the iterator of iter_rows will return the statement's `row`
+ * member.
+ */
 class iter_rows {
-    statement* _st;
+    std::reference_wrapper<statement> _st;
 
 public:
-    class iterator {
+    /**
+     * @brief Create a new range-of-rows that pulls results from the given
+     * SQLite statement.
+     *
+     * @param st The statement from which to pull results
+     */
+    explicit iter_rows(statement& st)
+        : _st(st) {}
+
+    /**
+     * @brief Iterator to access the resulting rows from the statement.
+     */
+    class iterator : public neo::iterator_facade<iterator> {
         friend class iter_rows;
+        statement* _st = nullptr;
 
-        statement* _st   = nullptr;
-        bool       _done = false;
-
-        struct end_iter {};
-        explicit iterator(end_iter)
-            : _done(true) {}
+        explicit iterator(statement& st)
+            : _st(&st) {
+            auto rc = st.step();
+            neo_assert(invariant,
+                       rc == errc::row || rc == errc::done,
+                       "Initial step returned an error");
+        }
 
     public:
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = row_access;
-        using reference         = value_type&;
-        using pointer           = value_type*;
-        using iterator_category = std::input_iterator_tag;
+        constexpr iterator() = default;
 
-        iterator() = default;
-        explicit iterator(statement& st)
-            : _st(&st) {}
-
-        reference operator*() const noexcept { return _st->row; }
-        pointer   operator->() const noexcept { return &_st->row; }
-        iterator& operator++() noexcept {
-            if (_st->step() == statement::done) {
-                _done = true;
-            }
-            return *this;
+        row_access dereference() const noexcept {
+            neo_assert(expects,
+                       _st != nullptr,
+                       "Dereference of row-iterator with no associated statement");
+            neo_assert(expects, !at_end(), "Dereference of finished row-iterator");
+            return _st->row();
         }
-        // The `void` is not a typo.
-        void operator++(int) noexcept { ++(*this); }
 
-        [[nodiscard]] bool is_end() const noexcept { return _done; }
-
-        friend bool operator==(const iterator& lhs, const iterator& rhs) {
-            return lhs._done == rhs._done;
+        void increment() {
+            neo_assert(expects,
+                       _st != nullptr,
+                       "Advanced of row-iterator with no associated statement");
+            neo_assert(expects, !at_end(), "Advance of a finished row-iterator");
+            auto rc = _st->step();
+            neo_assert(invariant, rc == errc::row || rc == errc::done, "step() returned an error");
         }
-        friend bool operator!=(const iterator& lhs, const iterator& rhs) { return !(lhs == rhs); }
+
+        struct sentinel_type {};
+        bool at_end() const noexcept { return !_st->is_busy(); }
     };
 
-    iter_rows() = default;
-    explicit iter_rows(statement& st)
-        : _st(&st) {}
+    /**
+     * @brief Begin iterating over rows.
+     *
+     * Calling this function will execute the statement *once* to ready the first
+     * result. Beware calling this multiple times.
+     */
+    [[nodiscard]] iterator begin() const noexcept { return iterator(_st); }
 
-    iterator begin() const noexcept {
-        assert(_st != nullptr);
-        if (!_st->is_busy()) {
-            if (_st->step() == statement::done) {
-                return iterator(iterator::end_iter());
-            }
-        }
-        return iterator(*_st);
-    }
-    iterator end() const noexcept {
-        assert(_st != nullptr);
-        return iterator(iterator::end_iter());
-    }
+    /**
+     * @brief Obtain an end-sentinel for the row iterator
+     */
+    [[nodiscard]] constexpr auto end() const noexcept { return iterator::sentinel_type(); }
 };
 
 }  // namespace neo::sqlite3
