@@ -243,7 +243,9 @@ class statement {
     void          _destroy() noexcept;
 
 public:
+    /// Alias of errc::done
     static constexpr auto done = errc::done;
+    /// Alias of errc::row
     static constexpr auto more = errc::row;
 
     ~statement() {
@@ -266,21 +268,66 @@ public:
         return *this;
     }
 
+    /// Reset the state of the SQLite VM. Prepares the statement to be executed again
     void reset() noexcept;
 
+    /// Obtain the SQLite C API pointer
     [[nodiscard]] sqlite3_stmt* c_ptr() const noexcept { return _stmt_ptr; }
+    /// Relinquish ownership of the underlying C API pointer
     [[nodiscard]] sqlite3_stmt* release() noexcept { return std::exchange(_stmt_ptr, nullptr); }
 
+    /**
+     * @brief Execute one step of the prepared statement.
+     *
+     * Returns the result code of executing one step. If the result returned
+     * from step() is neither errc::row nor errc::done, then this will throw
+     * a 'sqlite3::errc_error` exception corresponding to the result code.
+     *
+     * @return errc The result of execution. Fort his overload, either errc::done
+     *         or errc::row.
+     */
     errc step();
+
+    /**
+     * @brief Execute one step of the prepared statement, and return the result
+     * code unconditionally.
+     *
+     * Unlike the zero-argument form, this method will return the result code
+     * of executing the statement one step, but will not throw an exception in
+     * case of normal error.
+     *
+     * @note There is one condition: We assert() against errc::misuse. If SQLite
+     *       detects a misuse of the library, the program will terminate.
+     *
+     * @return errc The result code of a single step. Will never be errc::misuse
+     */
     [[nodiscard]] errc step(std::nothrow_t) noexcept;
+
+    /**
+     * @brief Execute one step of the prepared statement, and place the result
+     *        into a 'std::error_code'
+     *
+     * @param ec Output parameter for the error code. Will always be of the
+     *           sqlite3::error_category()
+     * @return errc The raw result code of executing the statement.
+     */
     [[nodiscard]] errc step(std::error_code& ec) noexcept;
 
+    /**
+     * @brief Continually execute the statement until it is complete
+     */
     void run_to_completion() {
         while (step() == more) {
             /* Keep going */
         }
     }
 
+    /**
+     * @brief Determine whether the statement is currently being executed.
+     *
+     * @return true If step() has been called and the statement is not done
+     * @return false If the statement is not already being executed
+     */
     [[nodiscard]] bool is_busy() const noexcept;
 
     /**
