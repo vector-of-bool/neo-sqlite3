@@ -8,6 +8,7 @@
 #include <neo/fwd.hpp>
 
 #include <functional>
+#include <new>
 #include <optional>
 #include <tuple>
 #include <type_traits>
@@ -270,7 +271,8 @@ public:
     [[nodiscard]] sqlite3_stmt* c_ptr() const noexcept { return _stmt_ptr; }
     [[nodiscard]] sqlite3_stmt* release() noexcept { return std::exchange(_stmt_ptr, nullptr); }
 
-    errc               step();
+    errc step();
+    [[nodiscard]] errc step(std::nothrow_t) noexcept;
     [[nodiscard]] errc step(std::error_code& ec) noexcept;
 
     void run_to_completion() {

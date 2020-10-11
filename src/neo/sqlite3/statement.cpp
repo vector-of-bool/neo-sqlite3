@@ -27,6 +27,12 @@ errc statement::step() {
 }
 
 errc statement::step(std::error_code& ec) noexcept {
+    auto rc = step(std::nothrow);
+    ec      = make_error_code(rc);
+    return rc;
+}
+
+errc statement::step(std::nothrow_t) noexcept {
     auto result = ::sqlite3_step(c_ptr());
     neo_assert_always(expects,
                       result != SQLITE_MISUSE,
@@ -34,7 +40,6 @@ errc statement::step(std::error_code& ec) noexcept {
                       "statement while it is in an invalid state to do so. This is an issue in the "
                       "application or library, and it is not the fault of SQLite or of any user "
                       "action. We cannot safely continue, so the program will now be terminated.");
-    ec = to_error_code(result);
     return errc{result};
 }
 
