@@ -292,12 +292,12 @@ public:
     /**
      * @brief Access/modify the parameter bindings of this statement
      */
-    binding_access bindings{*this};
+    binding_access bindings() noexcept { return binding_access{*this}; }
 
     /**
      * @brief Access the columne metadata of this statement.
      */
-    column_access columns{*this};
+    column_access columns() noexcept { return column_access{*this}; }
 };
 
 }  // namespace neo::sqlite3

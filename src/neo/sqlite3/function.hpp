@@ -88,8 +88,7 @@ private:
 
     template <typename T>
     T _get_arg(sqlite3_value* ptr) {
-        auto ref = value_ref::from_ptr(ptr);
-        return ref.as<T>();
+        return value_ref(ptr).as<T>();
     }
 
     template <std::size_t... Is>

@@ -23,8 +23,6 @@ enum class value_type {
 };
 
 class value_ref {
-    friend class row_access;
-
     sqlite3_value* _value_ptr = nullptr;
 
     value_ref() = default;
@@ -57,11 +55,8 @@ class value_ref {
     }
 
 public:
-    static value_ref from_ptr(sqlite3_value* p) {
-        value_ref ret;
-        ret._value_ptr = p;
-        return ret;
-    }
+    explicit value_ref(::sqlite3_value* ptr) noexcept
+        : _value_ptr(ptr) {}
 
     [[nodiscard]] value_type type() const noexcept;
 

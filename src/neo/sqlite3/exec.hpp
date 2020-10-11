@@ -21,8 +21,8 @@ namespace neo::sqlite3 {
 template <typename... Ts>
 void exec(statement& st, Ts&&... bindings) {
     st.reset();
-    st.bindings.clear();
-    st.bindings = std::forward_as_tuple(NEO_FWD(bindings)...);
+    st.bindings().clear();
+    st.bindings() = std::forward_as_tuple(NEO_FWD(bindings)...);
     st.run_to_completion();
 }
 
@@ -42,8 +42,8 @@ void exec(statement&& st, Ts&&... bindings) {
 template <typename... Ts>
 [[nodiscard]] auto exec_rows(statement& st, Ts&&... bindings) {
     st.reset();
-    st.bindings.clear();
-    st.bindings = std::forward_as_tuple(NEO_FWD(bindings)...);
+    st.bindings().clear();
+    st.bindings() = std::forward_as_tuple(NEO_FWD(bindings)...);
     return iter_rows(st);
 }
 
@@ -64,8 +64,8 @@ template <typename... Ts>
 template <typename... OutTypes, typename... Ts>
 [[nodiscard]] auto exec_tuples(statement& st, Ts&&... bindings) {
     st.reset();
-    st.bindings.clear();
-    st.bindings = std::forward_as_tuple(NEO_FWD(bindings)...);
+    st.bindings().clear();
+    st.bindings() = std::forward_as_tuple(NEO_FWD(bindings)...);
     return iter_tuples<OutTypes...>(st);
 }
 
