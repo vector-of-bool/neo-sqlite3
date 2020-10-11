@@ -105,6 +105,13 @@ public:
     void register_function(const std::string& name, Func&& fn);
     template <typename Func>
     void register_function(const std::string& name, fn_flags, Func&& fn);
+
+    /**
+     * @brief Interupt any currently in-progress database operation.
+     *
+     * This function is safe to call from any thread.
+     */
+    void interrupt() noexcept;
 };
 
 /**

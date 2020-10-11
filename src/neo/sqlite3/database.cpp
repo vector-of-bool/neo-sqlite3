@@ -123,3 +123,5 @@ std::optional<blob> database_ref::open_blob(const string&    db,
 }
 
 std::string_view database_ref::error_message() const noexcept { return ::sqlite3_errmsg(c_ptr()); }
+
+void database_ref::interrupt() noexcept { ::sqlite3_interrupt(c_ptr()); }
