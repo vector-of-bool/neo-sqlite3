@@ -54,7 +54,7 @@ statement::state statement::step(std::error_code& ec) noexcept {
                       "application or library, and it is not the fault of SQLite or of any user "
                       "action. We cannot safely continue, so the program will now be terminated.");
     ec = to_error_code(result);
-    return state::error;
+    return state{result};
 }
 
 bool statement::is_busy() const noexcept { return ::sqlite3_stmt_busy(_stmt_ptr) != 0; }

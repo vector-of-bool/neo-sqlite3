@@ -240,10 +240,9 @@ class statement {
     void          _destroy() noexcept;
 
 public:
-    enum class state {
-        done,
-        more,
-        error,
+    enum class state : int {
+        more = 100,
+        done = 101,
     };
 
     static constexpr auto done = state::done;
