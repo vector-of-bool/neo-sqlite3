@@ -61,7 +61,7 @@ public:
     /**
      * @brief Obtain an end-sentinel for the tuple iterator
      */
-    [[nodiscard]] constexpr iterator::sentinel_type end() const noexcept { return {}; }
+    [[nodiscard]] constexpr typename iterator::sentinel_type end() const noexcept { return {}; }
 };
 
 }  // namespace neo::sqlite3

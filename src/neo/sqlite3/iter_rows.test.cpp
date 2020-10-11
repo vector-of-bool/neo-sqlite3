@@ -16,7 +16,6 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic iteration") {
     auto rng  = neo::sqlite3::iter_rows(st);
     auto iter = rng.begin();
     auto stop = rng.end();
-    CHECK(stop != iter);
     CHECK(iter != stop);
     // Repeated access won't advance the iterator
     CHECK_NOTHROW(*iter);
