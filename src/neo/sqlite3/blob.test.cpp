@@ -6,7 +6,7 @@
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Generate a large zero-blob") {
     db.prepare("CREATE TABLE stuff (data BLOB NOT NULL)").run_to_completion();
     auto st        = db.prepare("INSERT INTO stuff VALUES (?)");
-    st.bindings[1] = neo::sqlite3::zeroblob(1024 * 1024);
+    st.bindings[1] = neo::sqlite3::zeroblob{1024 * 1024};
     st.run_to_completion();
 }
 
