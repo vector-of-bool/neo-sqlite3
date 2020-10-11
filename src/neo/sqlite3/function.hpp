@@ -4,8 +4,9 @@
 #include <neo/sqlite3/value_ref.hpp>
 
 #include <neo/assert.hpp>
+#include <neo/enum.hpp>
+#include <neo/fwd.hpp>
 
-#include <functional>
 #include <memory>
 #include <tuple>
 #include <type_traits>
@@ -27,7 +28,7 @@ struct is_argtypes {
     using type = argtypes_tag<std::decay_t<Args>...>;
 };
 
-template <typename Func, typename = void>
+template <typename Func>
 struct infer_argtypes {
     using type = void;
 };
@@ -48,7 +49,10 @@ template <typename Ret, typename... Args>
 struct infer_argtypes<Ret (*)(Args...)> : is_argtypes<Args...> {};
 
 template <typename Func>
-struct infer_argtypes<Func, std::void_t<decltype(&std::decay_t<Func>::operator())>> {
+requires requires {
+    &std::decay_t<Func>::operator();
+}
+struct infer_argtypes<Func> {
     using type = typename infer_argtypes<decltype(&std::decay_t<Func>::operator())>::type;
 };
 
@@ -77,7 +81,7 @@ class fn_wrapper<Func, argtypes_tag<ArgTypes...>> : public fn_wrapper_base {
 public:
     template <typename FuncArg>
     fn_wrapper(FuncArg&& fn)
-        : _fn(std::forward<FuncArg>(fn)) {}
+        : _fn(NEO_FWD(fn)) {}
 
 private:
     Func _fn;
@@ -129,17 +133,11 @@ enum class fn_flags {
     allow_indirect   = 0b0000'0010,
 };
 
-constexpr fn_flags operator|(fn_flags lhs, fn_flags rhs) noexcept {
-    return static_cast<fn_flags>(static_cast<int>(lhs) | static_cast<int>(rhs));
-}
-
-constexpr fn_flags operator&(fn_flags lhs, fn_flags rhs) noexcept {
-    return static_cast<fn_flags>(static_cast<int>(lhs) & static_cast<int>(rhs));
-}
+NEO_DECL_ENUM_BITOPS(fn_flags);
 
 template <typename Func>
 void database::register_function(const std::string& name, Func&& fn) {
-    register_function(name, fn_flags::none, std::forward<Func>(fn));
+    register_function(name, fn_flags::none, NEO_FWD(fn));
 }
 
 template <typename Func>
@@ -148,10 +146,10 @@ void database::register_function(const std::string& name, fn_flags flags, Func&&
     static_assert(!std::is_void_v<argtypes>,
                   "Unable to infer the argument types of the function object. Did you pass a "
                   "callable object? Argument type detection can fail if you passed a callable "
-                  "object with a templated call operator.");
+                  "object with a generic/templated call operator (including as a closure from a "
+                  "generic lambda expression).");
     // Generate the wrapper, and register
-    auto wrapper = std::make_unique<detail::fn_wrapper<std::decay_t<Func>, argtypes>>(
-        std::forward<Func>(fn));
+    auto wrapper = std::make_unique<detail::fn_wrapper<std::decay_t<Func>, argtypes>>(NEO_FWD(fn));
     detail::register_function(_ptr, name, std::move(wrapper), argtypes::count, flags);
 }
 

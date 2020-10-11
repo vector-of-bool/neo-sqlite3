@@ -66,26 +66,27 @@ void detail::register_function(::sqlite3*                               db_,
                                fn_flags                                 flags) {
     auto db = reinterpret_cast<::sqlite3*>(db_);
 
-    auto rc
-        = ::sqlite3_create_function_v2(db,
-                                       name.data(),
-                                       static_cast<int>(argc),
-                                       SQLITE_UTF8
-                                           | ((flags & fn_flags::allow_indirect) != fn_flags::none
-                                                  ? 0
-                                                  : SQLITE_DIRECTONLY)
-                                           | ((flags & fn_flags::nondeterministic) != fn_flags::none
-                                                  ? 0
-                                                  : SQLITE_DETERMINISTIC),
-                                       wrapper.get(),
-                                       &invoke_fn_wrapper_shared_ptr,
-                                       nullptr,
-                                       nullptr,
-                                       &destroy_fn_wrapper_shared_ptr);
+    auto rc = ::sqlite3_create_function_v2(db,
+                                           name.data(),
+                                           static_cast<int>(argc),
+                                           SQLITE_UTF8
+                                               | (test_flags(flags, fn_flags::allow_indirect)
+                                                      ? 0
+                                                      : SQLITE_DIRECTONLY)
+                                               | (test_flags(flags, fn_flags::nondeterministic)
+                                                      ? 0
+                                                      : SQLITE_DETERMINISTIC),
+                                           wrapper.get(),
+                                           &invoke_fn_wrapper_shared_ptr,
+                                           nullptr,
+                                           nullptr,
+                                           &destroy_fn_wrapper_shared_ptr);
     auto ec = to_error_code(rc);
-    throw_if_error(ec,
-                   ufmt("Error while creating a scalar function '{}'", name),
-                   ::sqlite3_errmsg(db));
+    if (ec) {
+        throw_error(ec,
+                    ufmt("Error while creating a scalar function '{}'", name),
+                    ::sqlite3_errmsg(db));
+    }
     // Our shared_ptr is now in the care of SQLite. It will call our destroy
     // callback when needed.
     wrapper.release();
