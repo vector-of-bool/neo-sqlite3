@@ -18,23 +18,19 @@ class statement;
 enum class fn_flags;
 
 /**
- * @brief A SQLite database connection.
- *
+ * @brief A non-owning reference to a database connection.
  */
-class database {
+class database_ref {
+    database_ref() = default;
+
     ::sqlite3* _ptr;
 
-    database() = default;
-
-    void _close() noexcept;
+protected:
+    ::sqlite3* _exchange_ptr(::sqlite3* pt) noexcept { return std::exchange(_ptr, pt); }
 
 public:
-    /// We are move-only
-    database(database&& other) noexcept
-        : _ptr(other.release()) {}
-
     /// Constructing from a null pointer is illegal
-    explicit database(decltype(nullptr)) = delete;
+    explicit database_ref(decltype(nullptr)) = delete;
 
     /**
      * @brief Construct a new database object from the given SQLite C API pointer.
@@ -44,47 +40,16 @@ public:
      *
      * @param ptr A pointer to an open SQLite database.
      */
-    explicit database(::sqlite3*&& ptr) noexcept
-        : _ptr(std::exchange(ptr, nullptr)) {
+    explicit database_ref(::sqlite3* ptr) noexcept
+        : _ptr(ptr) {
         /// We cannot be constructed from null
         neo_assert(expects,
                    _ptr != nullptr,
-                   "neo::sqlite3::database was constructed from a null pointer.");
-    }
-
-    database& operator=(database&& other) noexcept {
-        if (_ptr) {
-            _close();
-        }
-        _ptr = other.release();
-        return *this;
-    }
-
-    ~database() {
-        /// Defined inline to aide DCE when destroying moved-from objects
-        if (_ptr) {
-            _close();
-        }
+                   "neo::sqlite3::database_ref was constructed from a null pointer.");
     }
 
     /// Obtain a copy of the SQLite C API pointer.
     [[nodiscard]] ::sqlite3* c_ptr() const noexcept { return _ptr; }
-    /// Relinquish ownership of the SQLite database object, and return the pointer.
-    [[nodiscard]] ::sqlite3* release() noexcept { return std::exchange(_ptr, nullptr); }
-
-    /**
-     * @brief Open a new SQLite database.
-     *
-     * @param s The name/path to the database. Refer to ::sqlite3_open.
-     * @param ec If opening failed, 'ec' will be set to the error that occurred
-     * @return std::optional<database> Returns nullopt if opening failed, otherwise a new database
-     */
-    static std::optional<database> open(const std::string& s, std::error_code& ec) noexcept;
-    /// Throwing variant of open()
-    static database open(const std::string& s);
-
-    /// Create a new in-memory database
-    static database create_memory_db() { return open(":memory:"); }
 
     /**
      * @brief Create a new prepared statement attached to this database.
@@ -137,6 +102,60 @@ public:
     void register_function(const std::string& name, Func&& fn);
     template <typename Func>
     void register_function(const std::string& name, fn_flags, Func&& fn);
+};
+
+/**
+ * @brief An open database connection. Inherits all APIs from database_ref
+ *
+ * When the object goes out of scope, the database will be closed.
+ */
+class database : public database_ref {
+    database() = default;
+
+    void _close() noexcept;
+
+public:
+    /// Constructing from a null pointer is illegal
+    explicit database(decltype(nullptr)) = delete;
+
+    explicit database(::sqlite3*&& ptr) noexcept
+        : database_ref(std::exchange(ptr, nullptr)) {}
+
+    /// We are move-only
+    database(database&& other) noexcept
+        : database_ref(other.release()) {}
+
+    database& operator=(database&& other) noexcept {
+        if (c_ptr()) {
+            _close();
+        }
+        _exchange_ptr(other.release());
+        return *this;
+    }
+
+    ~database() {
+        /// Defined inline to aide DCE when destroying moved-from objects
+        if (c_ptr()) {
+            _close();
+        }
+    }
+
+    /// Relinquish ownership of the SQLite database object, and return the pointer.
+    [[nodiscard]] ::sqlite3* release() noexcept { return _exchange_ptr(nullptr); }
+
+    /**
+     * @brief Open a new SQLite database.
+     *
+     * @param s The name/path to the database. Refer to ::sqlite3_open.
+     * @param ec If opening failed, 'ec' will be set to the error that occurred
+     * @return std::optional<database> Returns nullopt if opening failed, otherwise a new database
+     */
+    static std::optional<database> open(const std::string& s, std::error_code& ec) noexcept;
+    /// Throwing variant of open()
+    static database open(const std::string& s);
+
+    /// Create a new in-memory database
+    static database create_memory_db() { return open(":memory:"); }
 };
 
 [[nodiscard]] inline auto create_memory_db() { return database::create_memory_db(); }

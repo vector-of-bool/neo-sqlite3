@@ -9,8 +9,8 @@ struct sqlite3;
 
 namespace neo::sqlite3 {
 
+class database_ref;
 class statement;
-class database;
 
 namespace detail {
 
@@ -33,7 +33,7 @@ class statement_cache {
     std::vector<detail::cached_statement_item> _statements;
 
 public:
-    explicit statement_cache(database& db) noexcept;
+    explicit statement_cache(database_ref db) noexcept;
     ~statement_cache();
 
     /**

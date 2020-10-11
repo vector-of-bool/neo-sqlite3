@@ -258,9 +258,6 @@ public:
     explicit statement(sqlite3_stmt*&& ptr) noexcept
         : _stmt_ptr(std::exchange(ptr, nullptr)) {}
 
-    static std::optional<statement>
-    prepare_within(::sqlite3* db, std::string_view query, std::error_code& ec) noexcept;
-
     statement(statement&& o) noexcept { _stmt_ptr = o.release(); }
 
     statement& operator=(statement&& o) noexcept {

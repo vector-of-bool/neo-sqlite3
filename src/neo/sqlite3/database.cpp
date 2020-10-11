@@ -32,11 +32,22 @@ database database::open(const std::string& s) {
     return std::move(*ret);
 }
 
-std::optional<statement> database::prepare(string_view query, std::error_code& ec) noexcept {
-    return statement::prepare_within(c_ptr(), query, ec);
+std::optional<statement> database_ref::prepare(string_view query, std::error_code& ec) noexcept {
+    const char*     str_tail = nullptr;
+    ::sqlite3_stmt* stmt     = nullptr;
+
+    ec = to_error_code(::sqlite3_prepare_v2(c_ptr(),
+                                            query.data(),
+                                            static_cast<int>(query.size()),
+                                            &stmt,
+                                            &str_tail));
+    if (ec) {
+        return std::nullopt;
+    }
+    return statement(std::move(stmt));
 }
 
-statement database::prepare(std::string_view query) {
+statement database_ref::prepare(std::string_view query) {
     std::error_code ec;
     auto            ret = prepare(query, ec);
     if (ec) {
@@ -45,7 +56,7 @@ statement database::prepare(std::string_view query) {
     return std::move(*ret);
 }
 
-void database::exec(const std::string& code) {
+void database_ref::exec(const std::string& code) {
     char* errmsg = nullptr;
     auto  rc     = ::sqlite3_exec(c_ptr(), code.data(), nullptr, nullptr, &errmsg);
     if (rc) {
@@ -53,31 +64,31 @@ void database::exec(const std::string& code) {
     }
 }
 
-void database::_close() noexcept { ::sqlite3_close(_ptr); }
+void database::_close() noexcept { ::sqlite3_close(_exchange_ptr(nullptr)); }
 
-bool database::is_transaction_active() const noexcept {
+bool database_ref::is_transaction_active() const noexcept {
     return ::sqlite3_get_autocommit(c_ptr()) == 0;
 }
 
-std::int64_t database::last_insert_rowid() const noexcept {
+std::int64_t database_ref::last_insert_rowid() const noexcept {
     return ::sqlite3_last_insert_rowid(c_ptr());
 }
 
-blob database::open_blob(const string& table, const string& column, std::int64_t rowid) {
+blob database_ref::open_blob(const string& table, const string& column, std::int64_t rowid) {
     return open_blob("main", table, column, rowid);
 }
 
-std::optional<blob> database::open_blob(const string&    table,
-                                        const string&    column,
-                                        std::int64_t     rowid,
-                                        std::error_code& ec) {
+std::optional<blob> database_ref::open_blob(const string&    table,
+                                            const string&    column,
+                                            std::int64_t     rowid,
+                                            std::error_code& ec) {
     return open_blob("main", table, column, rowid, ec);
 }
 
-blob database::open_blob(const string& db,
-                         const string& table,
-                         const string& column,
-                         std::int64_t  rowid) {
+blob database_ref::open_blob(const string& db,
+                             const string& table,
+                             const string& column,
+                             std::int64_t  rowid) {
     std::error_code ec;
     auto            ret = open_blob(db, table, column, rowid, ec);
     if (ec) {
@@ -88,11 +99,11 @@ blob database::open_blob(const string& db,
     return std::move(*ret);
 }
 
-std::optional<blob> database::open_blob(const string&    db,
-                                        const string&    table,
-                                        const string&    column,
-                                        std::int64_t     rowid,
-                                        std::error_code& ec) {
+std::optional<blob> database_ref::open_blob(const string&    db,
+                                            const string&    table,
+                                            const string&    column,
+                                            std::int64_t     rowid,
+                                            std::error_code& ec) {
     ::sqlite3_blob* ret_ptr = nullptr;
     // TODO: Expose options for read-only blobs
     auto rc = ::sqlite3_blob_open(c_ptr(),
@@ -111,4 +122,4 @@ std::optional<blob> database::open_blob(const string&    db,
     return blob(blob::from_raw(), ret_ptr);
 }
 
-std::string_view database::error_message() const noexcept { return ::sqlite3_errmsg(c_ptr()); }
+std::string_view database_ref::error_message() const noexcept { return ::sqlite3_errmsg(c_ptr()); }
