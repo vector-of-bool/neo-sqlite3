@@ -27,7 +27,8 @@ namespace neo::sqlite3 {
  * there are none, or nullopt if the first step() encountered an error.
  */
 template <typename... Ts>
-std::optional<std::tuple<Ts...>> unpack_single_opt(statement& st, std::error_code& ec) {
+[[nodiscard]] std::optional<std::tuple<Ts...>> unpack_single_opt(statement&       st,
+                                                                 std::error_code& ec) {
     auto opt_elem = unpack_next_opt<Ts...>(st, ec);
     if (!opt_elem) {
         return std::nullopt;
@@ -49,7 +50,7 @@ std::optional<std::tuple<Ts...>> unpack_single_opt(statement& st, std::error_cod
  * errc::done.
  */
 template <typename... Ts>
-std::optional<std::tuple<Ts...>> unpack_single_opt(statement& st) {
+[[nodiscard]] std::optional<std::tuple<Ts...>> unpack_single_opt(statement& st) {
     std::error_code ec;
     auto            res = unpack_single_opt<Ts...>(st, ec);
     if (ec != errc::row && ec != errc::done) {
@@ -72,7 +73,7 @@ std::optional<std::tuple<Ts...>> unpack_single_opt(statement& st) {
  * @return std::tuple<Ts...> The resulting row as a tuple
  */
 template <typename... Ts>
-std::tuple<Ts...> unpack_single(statement& st) {
+[[nodiscard]] std::tuple<Ts...> unpack_single(statement& st) {
     auto tup = unpack_single_opt<Ts...>(st);
     if (!tup) {
         throw_error(make_error_code(errc::done),

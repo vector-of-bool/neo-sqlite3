@@ -56,12 +56,12 @@ public:
      * Calling this function will execute the statement *once* to ready the first
      * result. Beware calling this multiple times.
      */
-    iterator begin() const { return iterator(iter_rows(_st).begin()); }
+    [[nodiscard]] iterator begin() const { return iterator(iter_rows(_st).begin()); }
 
     /**
      * @brief Obtain an end-sentinel for the tuple iterator
      */
-    constexpr iterator::sentinel_type end() const noexcept { return {}; }
+    [[nodiscard]] constexpr iterator::sentinel_type end() const noexcept { return {}; }
 };
 
 }  // namespace neo::sqlite3

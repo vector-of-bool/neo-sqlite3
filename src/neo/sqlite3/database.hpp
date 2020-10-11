@@ -58,9 +58,10 @@ public:
      * @param ec An output parameter for any error information
      * @return std::optional<statement> Returns nullopt on error, otherwise a new statement object
      */
-    std::optional<statement> prepare(std::string_view query, std::error_code& ec) noexcept;
+    [[nodiscard]] std::optional<statement> prepare(std::string_view query,
+                                                   std::error_code& ec) noexcept;
     /// Throwing variant of prepare()
-    statement prepare(std::string_view query);
+    [[nodiscard]] statement prepare(std::string_view query);
 
     /**
      * @brief Execute a sequence of semicolon-separated SQL statements.
@@ -70,24 +71,26 @@ public:
     void exec(const std::string& code);
 
     /// Determine whether there is an active transaction on the database
-    bool is_transaction_active() const noexcept;
+    [[nodiscard]] bool is_transaction_active() const noexcept;
     /// Obtain the most resent ROWID inserted by an INSERT statement.
-    std::int64_t last_insert_rowid() const noexcept;
+    [[nodiscard]] std::int64_t last_insert_rowid() const noexcept;
 
-    blob open_blob(const std::string& table, const std::string& column, std::int64_t rowid);
-    blob open_blob(const std::string& db,
-                   const std::string& table,
-                   const std::string& column,
-                   std::int64_t       rowid);
-    std::optional<blob> open_blob(const std::string& table,
-                                  const std::string& column,
-                                  std::int64_t       rowid,
-                                  std::error_code&   ec);
-    std::optional<blob> open_blob(const std::string& db,
-                                  const std::string& table,
-                                  const std::string& column,
-                                  std::int64_t       rowid,
-                                  std::error_code&   ec);
+    [[nodiscard]] blob
+                       open_blob(const std::string& table, const std::string& column, std::int64_t rowid);
+    [[nodiscard]] blob open_blob(const std::string& db,
+                                 const std::string& table,
+                                 const std::string& column,
+                                 std::int64_t       rowid);
+
+    [[nodiscard]] std::optional<blob> open_blob(const std::string& table,
+                                                const std::string& column,
+                                                std::int64_t       rowid,
+                                                std::error_code&   ec);
+    [[nodiscard]] std::optional<blob> open_blob(const std::string& db,
+                                                const std::string& table,
+                                                const std::string& column,
+                                                std::int64_t       rowid,
+                                                std::error_code&   ec);
 
     /**
      * @brief Obtain an error message string related to the most recent error
@@ -95,7 +98,7 @@ public:
      * @return std::string_view A view of an internal error string. This view is invalidated by the
      * next database operation!!
      */
-    std::string_view error_message() const noexcept;
+    [[nodiscard]] std::string_view error_message() const noexcept;
 
     // To use: #include <neo/sqlite3/function.hpp>
     template <typename Func>
@@ -150,12 +153,13 @@ public:
      * @param ec If opening failed, 'ec' will be set to the error that occurred
      * @return std::optional<database> Returns nullopt if opening failed, otherwise a new database
      */
-    static std::optional<database> open(const std::string& s, std::error_code& ec) noexcept;
+    [[nodiscard]] static std::optional<database> open(const std::string& s,
+                                                      std::error_code&   ec) noexcept;
     /// Throwing variant of open()
-    static database open(const std::string& s);
+    [[nodiscard]] static database open(const std::string& s);
 
     /// Create a new in-memory database
-    static database create_memory_db() { return open(":memory:"); }
+    [[nodiscard]] static database create_memory_db() { return open(":memory:"); }
 };
 
 [[nodiscard]] inline auto create_memory_db() { return database::create_memory_db(); }

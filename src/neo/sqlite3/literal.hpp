@@ -56,7 +56,8 @@ inline namespace literals {
  * @brief Create a new sql_string_literal from a string literal. This is the
  * only way to create sql_string_literal objects.
  */
-constexpr sql_string_literal operator""_sql(const char* ptr, std::size_t len) noexcept {
+[[nodiscard]] constexpr sql_string_literal operator""_sql(const char* ptr,
+                                                          std::size_t len) noexcept {
     sql_string_literal ret;
     ret._str = std::string_view(ptr, len);
     return ret;

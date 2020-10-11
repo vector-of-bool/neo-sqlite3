@@ -73,7 +73,7 @@ public:
     explicit           operator bool() const noexcept { return !is_null(); }
 
     template <typename T>
-    T as() const noexcept {
+    [[nodiscard]] T as() const noexcept {
         return static_cast<T>(_as(type_tag<T>()));
     }
 };

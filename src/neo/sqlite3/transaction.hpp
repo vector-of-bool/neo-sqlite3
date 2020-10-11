@@ -55,7 +55,7 @@ public:
     /**
      * @brief Check whether commit(), rollback(), or drop() has been called.
      */
-    bool dropped() const noexcept { return _db == nullptr; }
+    [[nodiscard]] bool dropped() const noexcept { return _db == nullptr; }
 };
 
 /**
@@ -99,10 +99,10 @@ public:
 
     /// If we are the top-level transaction, like transaction_guard::dropped(),
     /// otherwise returns 'false'
-    bool dropped() const noexcept { return !_inner.has_value() || _inner->dropped(); }
+    [[nodiscard]] bool dropped() const noexcept { return !_inner.has_value() || _inner->dropped(); }
 
     /// Determine if this guard is managing the current transaction
-    bool is_top_transaction() const noexcept { return _inner.has_value(); }
+    [[nodiscard]] bool is_top_transaction() const noexcept { return _inner.has_value(); }
 };
 
 }  // namespace neo::sqlite3

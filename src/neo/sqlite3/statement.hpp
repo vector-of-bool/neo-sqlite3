@@ -47,19 +47,16 @@ public:
         , _index(idx) {}
 
     // The name of the column
-    std::string_view name() const noexcept;
+    [[nodiscard]] std::string_view name() const noexcept;
 
     /// The original name of the column, regardless of the AS
-    NEO_SQLITE3_COLUMN_METADATA_API
-    std::string_view origin_name() const noexcept;
+    NEO_SQLITE3_COLUMN_METADATA_API [[nodiscard]] std::string_view origin_name() const noexcept;
 
     /// The name of the table that owns the column
-    NEO_SQLITE3_COLUMN_METADATA_API
-    std::string_view table_name() const noexcept;
+    NEO_SQLITE3_COLUMN_METADATA_API [[nodiscard]] std::string_view table_name() const noexcept;
 
     /// The name of the database that owns the column
-    NEO_SQLITE3_COLUMN_METADATA_API
-    std::string_view database_name() const noexcept;
+    NEO_SQLITE3_COLUMN_METADATA_API [[nodiscard]] std::string_view database_name() const noexcept;
 };
 
 /**
@@ -82,12 +79,12 @@ public:
      *
      * @param idx The index of the column. Left-most column is index zero
      */
-    column operator[](int idx) const noexcept {
+    [[nodiscard]] column operator[](int idx) const noexcept {
         neo_assert(expects, idx < count(), "Column index is out-of-range", idx, count());
         return column{_owner, idx};
     }
 
-    int count() const noexcept;
+    [[nodiscard]] int count() const noexcept;
 };
 
 /**
@@ -111,7 +108,7 @@ public:
      *
      * @param idx The column index. Left-most is index zero.
      */
-    value_ref operator[](int idx) const noexcept;
+    [[nodiscard]] value_ref operator[](int idx) const noexcept;
 
     /**
      * @brief Unpack the entire row into a typed tuple.
@@ -119,7 +116,7 @@ public:
      * @tparam Ts The types of the columns of the result
      */
     template <typename... Ts>
-    std::tuple<Ts...> unpack() const {
+    [[nodiscard]] std::tuple<Ts...> unpack() const {
         return _unpack<Ts...>(std::index_sequence_for<Ts...>());
     }
 };
@@ -287,17 +284,17 @@ public:
     /**
      * @brief Access to the current row of this statement.
      */
-    auto row() const noexcept { return row_access{*this}; }
+    [[nodiscard]] auto row() const noexcept { return row_access{*this}; }
 
     /**
      * @brief Access/modify the parameter bindings of this statement
      */
-    binding_access bindings() noexcept { return binding_access{*this}; }
+    [[nodiscard]] auto bindings() noexcept { return binding_access{*this}; }
 
     /**
      * @brief Access the columne metadata of this statement.
      */
-    column_access columns() noexcept { return column_access{*this}; }
+    [[nodiscard]] auto columns() noexcept { return column_access{*this}; }
 };
 
 }  // namespace neo::sqlite3

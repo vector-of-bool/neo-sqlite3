@@ -44,7 +44,7 @@ public:
      * the statement will be prepared and cached, and subsequent accesses will
      * look up the value in the cache.
      */
-    statement& operator()(sql_string_literal);
+    [[nodiscard]] statement& operator()(sql_string_literal);
 };
 
 }  // namespace neo::sqlite3

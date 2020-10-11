@@ -19,7 +19,8 @@ namespace neo::sqlite3 {
  * encounters an error
  */
 template <typename... Ts>
-std::optional<std::tuple<Ts...>> unpack_next_opt(statement& st, std::error_code& ec) noexcept {
+[[nodiscard]] std::optional<std::tuple<Ts...>> unpack_next_opt(statement&       st,
+                                                               std::error_code& ec) noexcept {
     auto status = st.step(ec);
     if (status != statement::more) {
         return std::nullopt;
@@ -34,7 +35,7 @@ std::optional<std::tuple<Ts...>> unpack_next_opt(statement& st, std::error_code&
  * other than errcond::done.
  */
 template <typename... Ts>
-std::optional<std::tuple<Ts...>> unpack_next_opt(statement& st) noexcept {
+[[nodiscard]] std::optional<std::tuple<Ts...>> unpack_next_opt(statement& st) noexcept {
     std::error_code ec;
     auto            r = unpack_next_opt(st, ec);
     if (!r) {
@@ -56,7 +57,7 @@ std::optional<std::tuple<Ts...>> unpack_next_opt(statement& st) noexcept {
  * @return std::tuple<Ts...> The statement result.
  */
 template <typename... Ts>
-std::tuple<Ts...> unpack_next(statement& st) {
+[[nodiscard]] std::tuple<Ts...> unpack_next(statement& st) {
     auto r = unpack_next_opt<Ts...>(st);
     if (!r) {
         throw_error(make_error_code(errc::done), "Cannot unpack next value from the database", "");

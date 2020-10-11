@@ -155,13 +155,13 @@ enum class errc : int {
 };
 
 /// Obtain an instance of the SQLite error category.
-const std::error_category& error_category() noexcept;
+[[nodiscard]] const std::error_category& error_category() noexcept;
 
-inline std::error_code make_error_code(errc e) noexcept {
+[[nodiscard]] inline std::error_code make_error_code(errc e) noexcept {
     return std::error_code(static_cast<int>(e), error_category());
 }
 
-inline std::error_condition make_error_condition(errcond cond) noexcept {
+[[nodiscard]] inline std::error_condition make_error_condition(errcond cond) noexcept {
     return std::error_condition(static_cast<int>(cond), error_category());
 }
 
@@ -171,7 +171,7 @@ inline std::error_condition make_error_condition(errcond cond) noexcept {
  * @param sqlite_errc An integral result code returned by a SQLite C API
  * @return std::error_code A new error_code object of the sqlite3_category
  */
-inline std::error_code to_error_code(int sqlite_errc) noexcept {
+[[nodiscard]] inline std::error_code to_error_code(int sqlite_errc) noexcept {
     return make_error_code(static_cast<errc>(sqlite_errc));
 }
 
@@ -197,7 +197,7 @@ inline void set_error_code(std::error_code& ec, int sqlite_errc) {
  * @param ec An extended error code from errc
  * @return errcond The generic condition that contains the given error code.
  */
-constexpr errcond error_code_condition(errc ec) {
+[[nodiscard]] constexpr errcond error_code_condition(errc ec) {
     switch (ec) {
     case errc::ioerr:
     case errc::ioerr_access:
@@ -327,8 +327,8 @@ class sqlite3_error : public std::system_error {
 public:
     sqlite3_error(std::error_code ec, std::string_view message, std::string_view sup) noexcept;
 
-    virtual std::error_condition condition() const noexcept = 0;
-    virtual std::error_code      code() const noexcept      = 0;
+    [[nodiscard]] virtual std::error_condition condition() const noexcept = 0;
+    [[nodiscard]] virtual std::error_code      code() const noexcept      = 0;
 };
 
 /**
@@ -343,7 +343,9 @@ template <errcond Cond>
 struct errcond_error : sqlite3_error {
     using sqlite3_error::sqlite3_error;
 
-    std::error_condition condition() const noexcept override { return make_error_condition(Cond); }
+    [[nodiscard]] std::error_condition condition() const noexcept override {
+        return make_error_condition(Cond);
+    }
 };
 
 /**
@@ -359,7 +361,7 @@ struct errc_error : errcond_error<error_code_condition(Code)> {
     errc_error(std::string_view message, std::string_view sup)
         : errc_error::errcond_error(make_error_code(Code), message, sup) {}
 
-    std::error_code code() const noexcept override { return make_error_code(Code); }
+    [[nodiscard]] std::error_code code() const noexcept override { return make_error_code(Code); }
 };
 
 /**

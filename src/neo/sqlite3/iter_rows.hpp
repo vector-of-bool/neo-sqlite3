@@ -74,12 +74,12 @@ public:
      * Calling this function will execute the statement *once* to ready the first
      * result. Beware calling this multiple times.
      */
-    iterator begin() const noexcept { return iterator(_st); }
+    [[nodiscard]] iterator begin() const noexcept { return iterator(_st); }
 
     /**
      * @brief Obtain an end-sentinel for the row iterator
      */
-    constexpr auto end() const noexcept { return iterator::sentinel_type(); }
+    [[nodiscard]] constexpr auto end() const noexcept { return iterator::sentinel_type(); }
 };
 
 }  // namespace neo::sqlite3
