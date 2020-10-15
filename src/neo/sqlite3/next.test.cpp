@@ -10,7 +10,8 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Pull the next result") {
     CHECK(i2 == 2);
     CHECK(i3 == 3);
     CHECK(st.is_busy());  // Still waiting
-    CHECK(st.step() == neo::sqlite3::statement::done);
+    CHECK_THROWS_AS(neo::sqlite3::unpack_next<int>(st),
+                    neo::sqlite3::errc_error<neo::sqlite3::errc::done>);
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Multiple results causes failure") {

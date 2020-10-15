@@ -3,76 +3,65 @@
 #include <neo/sqlite3/iter_rows.hpp>
 #include <neo/sqlite3/statement.hpp>
 
-#include <cassert>
-#include <optional>
+#include <neo/iterator_facade.hpp>
+
+#include <functional>
 
 namespace neo::sqlite3 {
 
+/**
+ * @brief A range over the results of a SQLite statement as a range of tuples
+ *
+ * @tparam Ts The unpack-types of each column in the statement result rows
+ */
 template <typename... Ts>
 class iter_tuples {
-    statement* _st = nullptr;
+    std::reference_wrapper<statement> _st;
 
 public:
-    class iterator {
-    public:
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = std::tuple<Ts...>;
-        using reference         = const value_type&;
-        using pointer           = const value_type*;
-        using iterator_category = std::input_iterator_tag;
+    /**
+     * @brief Create a new range-of-tuples that pull the result rows from the given
+     * statement.
+     *
+     * @param st The statement from which we will pull results
+     */
+    explicit iter_tuples(statement& st)
+        : _st(st) {}
 
+    /**
+     * @brief Iterator that accesses the rows and automatically unpacks them as tuples
+     */
+    class iterator : public neo::iterator_facade<iterator> {
     private:
         friend class iter_tuples;
 
-        iter_rows::iterator               _it;
-        mutable std::optional<value_type> _tup;
+        iter_rows::iterator _it;
 
-        auto _unpack_current() noexcept { return _it->unpack<Ts...>(); }
+        explicit iterator(iter_rows::iterator it)
+            : _it(it) {}
 
     public:
         iterator() = default;
-        explicit iterator(iter_rows::iterator it)
-            : _it(it) {
-            if (!it.is_end()) {
-                _tup.emplace(_unpack_current());
-            }
-        }
 
-        reference operator*() const noexcept { return *_tup; }
+        std::tuple<Ts...> dereference() const noexcept { return _it->unpack<Ts...>(); }
+        void              increment() { ++_it; }
 
-        pointer operator->() const noexcept { return &*_tup; }
-
-        iterator& operator++() noexcept {
-            ++_it;
-            if (_it.is_end()) {
-                _tup.reset();
-            } else {
-                _tup.emplace(_unpack_current());
-            }
-            return *this;
-        }
-        void operator++(int) noexcept { ++*this; }
-
-        friend bool operator==(const iterator& lhs, const iterator& rhs) noexcept {
-            return lhs._it == rhs._it;
-        }
-        friend bool operator!=(const iterator& lhs, const iterator& rhs) noexcept {
-            return lhs._it != rhs._it;
-        }
+        struct sentinel_type {};
+        bool at_end() const noexcept { return _it.at_end(); }
     };
 
-    iter_tuples() = default;
-    explicit iter_tuples(statement& st)
-        : _st(&st) {}
+    /**
+     * @brief Begin iterating the tuple results.
+     *
+     * Calling this function will execute the statement *once* to ready the first
+     * result. Beware calling this multiple times.
+     */
+    [[nodiscard]] iterator begin() const { return iterator(iter_rows(_st).begin()); }
 
-    iterator begin() const noexcept {
-        assert(_st != nullptr);
-        return iterator(iter_rows(*_st).begin());
-    }
-    iterator end() const noexcept {
-        assert(_st != nullptr);
-        return iterator(iter_rows(*_st).end());
-    }
+    /**
+     * @brief Obtain an end-sentinel for the tuple iterator
+     */
+    [[nodiscard]] constexpr typename iterator::sentinel_type end() const noexcept { return {}; }
 };
 
 }  // namespace neo::sqlite3

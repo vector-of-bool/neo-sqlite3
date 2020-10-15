@@ -1,3 +1,4 @@
+#include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/transaction.hpp>
 
 #include "./tests.inl"
@@ -18,6 +19,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Nested transaction guards") {
         CHECK(db.is_transaction_active());
         {
             neo::sqlite3::recursive_transaction_guard tr2{db};
+            CHECK_FALSE(tr2.is_top_transaction());
             CHECK(db.is_transaction_active());
         }
         CHECK(db.is_transaction_active());

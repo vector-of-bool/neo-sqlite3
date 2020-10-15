@@ -1,8 +1,19 @@
 #include "./statement_cache.hpp"
 
+#include "./c/sqlite3.h"
+#include "./database.hpp"
+#include "./statement.hpp"
+
+#include <neo/ufmt.hpp>
+
 #include <algorithm>
 
 using namespace neo::sqlite3;
+
+statement_cache::statement_cache(database_ref db) noexcept
+    : _db(db.c_ptr()) {}
+
+statement_cache::~statement_cache() = default;
 
 statement& statement_cache::operator()(sql_string_literal key) {
     auto insert_point = std::partition_point(_statements.begin(),
@@ -12,7 +23,7 @@ statement& statement_cache::operator()(sql_string_literal key) {
                                              });
     if (insert_point == _statements.end() || insert_point->key != key) {
         // Need to generate a new statement
-        auto new_st = _db->prepare(key.string());
+        auto new_st = database_ref(_db).prepare(key.string());
         auto iter   = _statements.emplace(insert_point,
                                         detail::cached_statement_item{key,
                                                                       std::make_unique<statement>(
