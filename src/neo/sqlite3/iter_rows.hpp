@@ -47,7 +47,11 @@ public:
     public:
         constexpr iterator() = default;
 
-        row_access dereference() const noexcept {
+        using difference_type = std::ptrdiff_t;
+        using value_type      = row_access;
+        enum { single_pass_iterator = true };
+
+        value_type dereference() const noexcept {
             neo_assert(expects,
                        _st != nullptr,
                        "Dereference of row-iterator with no associated statement");

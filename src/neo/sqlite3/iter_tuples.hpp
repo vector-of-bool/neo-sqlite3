@@ -43,8 +43,12 @@ public:
     public:
         iterator() = default;
 
-        std::tuple<Ts...> dereference() const noexcept { return _it->unpack<Ts...>(); }
-        void              increment() { ++_it; }
+        using difference_type = std::ptrdiff_t;
+        using value_type      = std::tuple<Ts...>;
+        enum { single_pass_iterator = true };
+
+        value_type dereference() const noexcept { return _it->unpack<Ts...>(); }
+        void       increment() { ++_it; }
 
         struct sentinel_type {};
         bool at_end() const noexcept { return _it.at_end(); }
