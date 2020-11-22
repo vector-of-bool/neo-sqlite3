@@ -38,3 +38,19 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Interrupt an operation") {
     rc = p.step();
     CHECK(rc == neo::sqlite3::errc::row);
 }
+
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Count changes") {
+    db.exec(R"(
+        CREATE TABLE stuff (foo, bar);
+        INSERT INTO stuff VALUES
+            (1, 2),
+            (1, 3),
+            (1, 4),
+            (1, 5)
+        ;
+    )");
+    CHECK(db.changes() == 4);
+    db.exec("DELETE FROM stuff WHERE foo = 1 AND bar == 3");
+    CHECK(db.changes() == 1);
+    CHECK(db.total_changes() == 5);
+}

@@ -74,6 +74,10 @@ public:
     [[nodiscard]] bool is_transaction_active() const noexcept;
     /// Obtain the most resent ROWID inserted by an INSERT statement.
     [[nodiscard]] std::int64_t last_insert_rowid() const noexcept;
+    /// Obtain the number of rows added/deleted/modified by the most recent database statement.
+    [[nodiscard]] int changes() const noexcept;
+    /// Obtain the number of rows added/deleted/modified since the database connection was opened.
+    [[nodiscard]] int total_changes() const noexcept;
 
     [[nodiscard]] blob
                        open_blob(const std::string& table, const std::string& column, std::int64_t rowid);

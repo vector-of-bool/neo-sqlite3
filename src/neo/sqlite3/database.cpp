@@ -74,6 +74,9 @@ std::int64_t database_ref::last_insert_rowid() const noexcept {
     return ::sqlite3_last_insert_rowid(c_ptr());
 }
 
+int database_ref::changes() const noexcept { return ::sqlite3_changes(c_ptr()); }
+int database_ref::total_changes() const noexcept { return ::sqlite3_total_changes(c_ptr()); }
+
 blob database_ref::open_blob(const string& table, const string& column, std::int64_t rowid) {
     return open_blob("main", table, column, rowid);
 }
