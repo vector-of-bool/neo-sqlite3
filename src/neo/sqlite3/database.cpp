@@ -14,7 +14,7 @@ using std::string_view;
 std::optional<database> database::open(const string& db_name, std::error_code& ec) noexcept {
     ::sqlite3* new_db = nullptr;
     set_error_code(ec, ::sqlite3_open(db_name.data(), &new_db));
-    if (ec) {
+    if (!new_db) {
         return std::nullopt;
     }
     // Enabled extended result codes on our new database
