@@ -13,7 +13,9 @@ using namespace neo::sqlite3;
 statement_cache::statement_cache(database_ref db) noexcept
     : _db(db.c_ptr()) {}
 
-statement_cache::~statement_cache() = default;
+statement_cache::~statement_cache()                          = default;
+statement_cache::statement_cache(statement_cache&&) noexcept = default;
+statement_cache& statement_cache::operator=(statement_cache&&) noexcept = default;
 
 statement& statement_cache::operator()(sql_string_literal key) {
     auto insert_point = std::partition_point(_statements.begin(),
