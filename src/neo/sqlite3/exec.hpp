@@ -11,25 +11,32 @@
 namespace neo::sqlite3 {
 
 /**
+ * @brief Reset and execute the prepared statement to completion.
+ *
+ * No parameters are bound. Generated rows are discarded
+ *
+ * @param st
+ */
+inline void exec(statement_mutref st) {
+    st->reset();
+    st->run_to_completion();
+}
+
+/**
  * @brief Reset, rebind, and execute a prepared statement to completion.
  *
- * Yielded rows are discarded.
+ * Generated rows are discarded.
  *
  * @param st The statement to execute
  * @param bindings The bindings to apply to the prepared statement
  */
 template <typename... Ts>
-void exec(statement& st, Ts&&... bindings) {
-    st.reset();
-    st.bindings().clear();
-    st.bindings() = std::forward_as_tuple(NEO_FWD(bindings)...);
-    st.run_to_completion();
-}
-
-// R-value statement overload
-template <typename... Ts>
-void exec(statement&& st, Ts&&... bindings) {
-    exec(st, NEO_FWD(bindings)...);
+void exec(statement_mutref st, const std::tuple<Ts...>& bindings) {
+    st->reset();
+    // Because we are running to completion, we know that any strings will outlive the statement
+    // execution, so we can convert every std::string to a string_view
+    st->bindings() = detail::view_strings(bindings);
+    st->run_to_completion();
 }
 
 /**
@@ -40,17 +47,10 @@ void exec(statement&& st, Ts&&... bindings) {
  * @return A range of row objects.
  */
 template <typename... Ts>
-[[nodiscard]] auto exec_rows(statement& st, Ts&&... bindings) {
-    st.reset();
-    st.bindings().clear();
-    st.bindings() = std::forward_as_tuple(NEO_FWD(bindings)...);
+[[nodiscard]] auto exec_rows(statement_mutref st, const std::tuple<Ts...>& bindings) {
+    st->reset();
+    st->bindings() = bindings;
     return iter_rows(st);
-}
-
-// R-value statement overload
-template <typename... Ts>
-[[nodiscard]] auto exec_rows(statement&& st, Ts&&... bindings) {
-    return exec_rows(st, NEO_FWD(bindings)...);
 }
 
 /**
@@ -62,10 +62,9 @@ template <typename... Ts>
  * @return A range of tuples corresponding to the values in the rows
  */
 template <typename... OutTypes, typename... Ts>
-[[nodiscard]] auto exec_tuples(statement& st, Ts&&... bindings) {
-    st.reset();
-    st.bindings().clear();
-    st.bindings() = std::forward_as_tuple(NEO_FWD(bindings)...);
+[[nodiscard]] auto exec_tuples(statement_mutref st, const std::tuple<Ts...>& bindings) {
+    st->reset();
+    st->bindings() = bindings;
     return iter_tuples<OutTypes...>(st);
 }
 

@@ -7,8 +7,8 @@
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute some queries") {
     db.exec("CREATE TABLE foo (value)");
-    neo::sqlite3::exec(db.prepare("INSERT INTO foo VALUES (?)"), 2);
-    neo::sqlite3::exec(db.prepare("INSERT INTO foo VALUES (?)"), 55);
+    neo::sqlite3::exec(db.prepare("INSERT INTO foo VALUES (?)"), std::tuple(2));
+    neo::sqlite3::exec(db.prepare("INSERT INTO foo VALUES (?)"), std::tuple(55));
     neo::sqlite3::exec(db.prepare("UPDATE foo SET value = value + 2"));
     auto get_values = db.prepare("SELECT value FROM foo");
 
@@ -25,7 +25,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute with a cache") {
     neo::sqlite3::exec(stmt_cache("INSERT INTO foo VALUES (12)"_sql));
     neo::sqlite3::exec(stmt_cache("INSERT INTO foo VALUES (12)"_sql));
     neo::sqlite3::exec(stmt_cache("INSERT INTO foo VALUES (12)"_sql));
-    neo::sqlite3::exec(stmt_cache("INSERT INTO foo VALUES (?)"_sql), 24);
+    neo::sqlite3::exec(stmt_cache("INSERT INTO foo VALUES (?)"_sql), std::tuple(24));
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate rows") {
@@ -37,7 +37,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate rows") {
             (4, 5, 6)
     )");
     neo::sqlite3::statement_cache stmt_cache{db};
-    auto rows = neo::sqlite3::exec_rows(stmt_cache("SELECT * FROM foo"_sql));
+    auto rows = neo::sqlite3::iter_rows(stmt_cache("SELECT * FROM foo"_sql));
     auto it   = rows.begin();
     auto stop = rows.end();
     CHECK(it != stop);
@@ -61,7 +61,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate tuples") {
             (4, 5, 6)
     )");
     neo::sqlite3::statement_cache stmt_cache{db};
-    auto tups = neo::sqlite3::exec_tuples<int, int, int>(stmt_cache("SELECT * FROM foo"_sql));
+    auto tups = neo::sqlite3::iter_tuples<int, int, int>(stmt_cache("SELECT * FROM foo"_sql));
     auto it   = tups.begin();
     auto stop = tups.end();
 

@@ -17,6 +17,25 @@ struct sqlite3;
 
 namespace neo::sqlite3 {
 
+namespace detail {
+
+template <typename T>
+constexpr const T& view_if_string(const T& arg) noexcept {
+    return arg;
+}
+
+inline std::string_view view_if_string(const std::string& str) noexcept { return str; }
+
+/// Given a tuple, convert each std::string into a std::string_view
+template <typename... Ts>
+constexpr auto view_strings(const std::tuple<Ts...>& tup) noexcept {
+    return std::apply([](const auto&... args)  //
+                      { return std::forward_as_tuple(view_if_string(NEO_FWD(args))...); },
+                      tup);
+}
+
+}  // namespace detail
+
 class database;
 class statement;
 
@@ -50,13 +69,13 @@ public:
     [[nodiscard]] std::string_view name() const noexcept;
 
     /// The original name of the column, regardless of the AS
-    NEO_SQLITE3_COLUMN_METADATA_API [[nodiscard]] std::string_view origin_name() const noexcept;
+    [[nodiscard]] std::string_view origin_name() const noexcept;
 
     /// The name of the table that owns the column
-    NEO_SQLITE3_COLUMN_METADATA_API [[nodiscard]] std::string_view table_name() const noexcept;
+    [[nodiscard]] std::string_view table_name() const noexcept;
 
     /// The name of the database that owns the column
-    NEO_SQLITE3_COLUMN_METADATA_API [[nodiscard]] std::string_view database_name() const noexcept;
+    [[nodiscard]] std::string_view database_name() const noexcept;
 };
 
 /**
@@ -343,6 +362,27 @@ public:
      * @brief Access the columne metadata of this statement.
      */
     [[nodiscard]] auto columns() noexcept { return column_access{*this}; }
+};
+
+/**
+ * @brief A reference-type that refers to a mutable statement.
+ *
+ * This is for use as a parameter type that accepts a non-const lvalue or rvalue
+ * reference.
+ */
+class statement_mutref {
+    std::reference_wrapper<statement> _st;
+
+public:
+    statement_mutref(statement& st)
+        : _st(st) {}
+    statement_mutref(statement&& st)
+        : _st(st) {}
+
+    operator statement&() noexcept { return _st; }
+
+    statement& get() noexcept { return _st; }
+    statement* operator->() noexcept { return &get(); }
 };
 
 }  // namespace neo::sqlite3
