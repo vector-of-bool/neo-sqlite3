@@ -325,13 +325,14 @@ inline void set_error_code(std::error_code& ec, int sqlite_errc) {
 /**
  * @brief Base class of all exceptions thrown by neo-sqlite3.
  */
-class sqlite3_error : public std::system_error {
+class error : public std::runtime_error {
 public:
-    sqlite3_error(std::error_code ec, std::string_view message, std::string_view sup) noexcept;
-
+    error(std::error_code ec, std::string_view message, std::string_view sup) noexcept;
     [[nodiscard]] virtual std::error_condition condition() const noexcept = 0;
     [[nodiscard]] virtual std::error_code      code() const noexcept      = 0;
 };
+
+using sqlite3_error [[deprecated("Use neo::sqlite3::error instead")]] = error;
 
 /**
  * @brief Base class template of all exceptions originating from the SQLite library
@@ -342,8 +343,8 @@ public:
  * @tparam Cond The error condition to represent
  */
 template <errcond Cond>
-struct errcond_error : sqlite3_error {
-    using sqlite3_error::sqlite3_error;
+struct errcond_error : error {
+    using error::error;
 
     [[nodiscard]] std::error_condition condition() const noexcept override {
         return make_error_condition(Cond);
