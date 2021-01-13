@@ -1,9 +1,8 @@
 #include "./error.hpp"
 
-#include <neo/sqlite3/c/sqlite3.h>
-
 #include <neo/assert.hpp>
 #include <neo/ufmt.hpp>
+#include <sqlite3/sqlite3.h>
 
 #include <cassert>
 #include <iostream>

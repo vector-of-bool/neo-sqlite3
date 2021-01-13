@@ -1,10 +1,10 @@
 #include "./statement_cache.hpp"
 
-#include "./c/sqlite3.h"
 #include "./database.hpp"
 #include "./statement.hpp"
 
 #include <neo/ufmt.hpp>
+#include <sqlite3/sqlite3.h>
 
 #include <algorithm>
 

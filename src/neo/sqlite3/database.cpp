@@ -1,10 +1,10 @@
 #include "./database.hpp"
 
 #include <neo/sqlite3/blob.hpp>
-#include <neo/sqlite3/c/sqlite3.h>
 #include <neo/sqlite3/statement.hpp>
 
 #include <neo/ufmt.hpp>
+#include <sqlite3/sqlite3.h>
 
 using namespace neo;
 using namespace neo::sqlite3;

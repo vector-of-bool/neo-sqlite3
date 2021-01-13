@@ -1,6 +1,5 @@
 #pragma once
 
-#include <neo/sqlite3/config.hpp>
 #include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/value_ref.hpp>
 

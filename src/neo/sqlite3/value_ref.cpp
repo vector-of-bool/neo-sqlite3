@@ -1,8 +1,7 @@
 #include "./value_ref.hpp"
 
-#include <neo/sqlite3/c/sqlite3.h>
-
 #include <neo/assert.hpp>
+#include <sqlite3/sqlite3.h>
 
 using namespace neo::sqlite3;
 

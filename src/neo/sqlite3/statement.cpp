@@ -2,7 +2,7 @@
 
 #include <neo/sqlite3/error.hpp>
 
-#include <neo/sqlite3/c/sqlite3.h>
+#include <sqlite3/sqlite3.h>
 
 using namespace neo::sqlite3;
 
@@ -123,6 +123,7 @@ std::string_view column::name() const noexcept {
     return ::sqlite3_column_name(OWNER_STMT_PTR, _index);
 }
 
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
 std::string_view column::origin_name() const noexcept {
     return ::sqlite3_column_origin_name(OWNER_STMT_PTR, _index);
 }
@@ -134,3 +135,4 @@ std::string_view column::table_name() const noexcept {
 std::string_view column::database_name() const noexcept {
     return ::sqlite3_column_database_name(OWNER_STMT_PTR, _index);
 }
+#endif
