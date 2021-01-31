@@ -59,64 +59,6 @@ value_ref row_access::operator[](int idx) const noexcept {
     return value_ref(val);
 }
 
-void binding_access::binding::bind(double d) {
-    auto ec = to_error_code(::sqlite3_bind_double(OWNER_STMT_PTR, _index, d));
-    throw_if_error(ec,
-                   "sqlite3_bind_double()",
-                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
-}
-
-void binding_access::binding::bind(std::int64_t i) {
-    auto ec = to_error_code(::sqlite3_bind_int64(OWNER_STMT_PTR, _index, i));
-    throw_if_error(ec,
-                   "sqlite3_bind_int64()",
-                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
-}
-
-void binding_access::binding::bind(const std::string& str) {
-    auto ec = to_error_code(::sqlite3_bind_text64(OWNER_STMT_PTR,
-                                                  _index,
-                                                  str.data(),
-                                                  str.size(),
-                                                  SQLITE_TRANSIENT,
-                                                  SQLITE_UTF8));
-    throw_if_error(ec,
-                   "sqlite3_bind_text64()",
-                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
-}
-
-void binding_access::binding::_bind_nocopy(std::string_view str) {
-    auto ec = to_error_code(::sqlite3_bind_text64(OWNER_STMT_PTR,
-                                                  _index,
-                                                  str.data(),
-                                                  str.size(),
-                                                  nullptr,
-                                                  SQLITE_UTF8));
-    throw_if_error(ec,
-                   "sqlite3_bind_text64()",
-                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
-}
-
-void binding_access::binding::bind(null_t) {
-    auto ec = to_error_code(::sqlite3_bind_null(OWNER_STMT_PTR, _index));
-    throw_if_error(ec,
-                   "sqlite3_bind_null()",
-                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
-}
-
-void binding_access::binding::bind(zeroblob zb) {
-    auto ec = to_error_code(::sqlite3_bind_zeroblob64(OWNER_STMT_PTR, _index, zb.size));
-    throw_if_error(ec,
-                   "sqlite3_bind_zeroblob64()",
-                   ::sqlite3_errmsg(::sqlite3_db_handle(OWNER_STMT_PTR)));
-}
-
-void binding_access::clear() noexcept { ::sqlite3_clear_bindings(OWNER_STMT_PTR); }
-
-int binding_access::named_parameter_index(const char* zstr) const noexcept {
-    return ::sqlite3_bind_parameter_index(OWNER_STMT_PTR, zstr);
-}
-
 int column_access::count() const noexcept { return ::sqlite3_column_count(OWNER_STMT_PTR); }
 
 std::string_view column::name() const noexcept {
