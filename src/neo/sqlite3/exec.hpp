@@ -47,9 +47,9 @@ void exec(statement_mutref st, const std::tuple<Ts...>& bindings) {
  * @return A range of row objects.
  */
 template <typename... Ts>
-[[nodiscard]] auto exec_rows(statement_mutref st, const std::tuple<Ts...>& bindings) {
-    st->reset();
-    st->bindings() = bindings;
+[[nodiscard]] auto exec_rows(statement& st, const std::tuple<Ts...>& bindings) {
+    st.reset();
+    st.bindings() = bindings;
     return iter_rows(st);
 }
 
@@ -62,9 +62,9 @@ template <typename... Ts>
  * @return A range of tuples corresponding to the values in the rows
  */
 template <typename... OutTypes, typename... Ts>
-[[nodiscard]] auto exec_tuples(statement_mutref st, const std::tuple<Ts...>& bindings) {
-    st->reset();
-    st->bindings() = bindings;
+[[nodiscard]] auto exec_tuples(statement& st, const std::tuple<Ts...>& bindings) {
+    st.reset();
+    st.bindings() = bindings;
     return iter_tuples<OutTypes...>(st);
 }
 
