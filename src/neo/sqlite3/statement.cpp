@@ -17,10 +17,10 @@ void statement::reset() noexcept {
 }
 
 errc statement::step() {
-    std::error_code ec;
-    auto            result = step(ec);
+    auto result = step(std::nothrow);
     if (result != errc::done && result != errc::row) {
         auto db = ::sqlite3_db_handle(c_ptr());
+        auto ec = make_error_code(result);
         throw_error(ec, "Failure while executing statement", ::sqlite3_errmsg(db));
     }
     return errc{result};
