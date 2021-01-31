@@ -69,6 +69,7 @@ public:
         }
 
         struct sentinel_type {};
+        bool operator==(sentinel_type) const noexcept { return at_end(); }
         bool at_end() const noexcept { return !_st->is_busy(); }
     };
 

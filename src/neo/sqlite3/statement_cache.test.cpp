@@ -14,4 +14,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic statement caching") {
     auto& st3 = cache(q);
     CHECK(&st1 != &st2);
     CHECK(&st1 == &st3);
+
+    // Ensure we can move-assign
+    cache = neo::sqlite3::statement_cache{db};
 }

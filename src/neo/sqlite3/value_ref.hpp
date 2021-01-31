@@ -1,5 +1,7 @@
 #pragma once
 
+#include "./fwd.hpp"
+
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -9,9 +11,6 @@ struct sqlite3_value;
 namespace neo::sqlite3 {
 
 class row_access;
-
-inline struct null_t {
-} null;
 
 enum class value_type {
     blob,

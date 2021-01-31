@@ -1,11 +1,11 @@
 #include "./function.hpp"
 
-#include <neo/sqlite3/c/sqlite3.h>
 #include <neo/sqlite3/database.hpp>
 #include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/value_ref.hpp>
 
 #include <neo/ufmt.hpp>
+#include <sqlite3/sqlite3.h>
 
 #include <array>
 
@@ -66,16 +66,20 @@ void detail::register_function(::sqlite3*                               db_,
                                fn_flags                                 flags) {
     auto db = reinterpret_cast<::sqlite3*>(db_);
 
+    int flags_i = SQLITE_UTF8;
+#ifdef SQLITE_DIRECTONLY
+    if (!test_flags(flags, fn_flags::allow_indirect)) {
+        flags_i |= SQLITE_DIRECTONLY;
+    }
+#endif
+    if (!test_flags(flags, fn_flags::nondeterministic)) {
+        flags_i |= SQLITE_DETERMINISTIC;
+    }
+
     auto rc = ::sqlite3_create_function_v2(db,
                                            name.data(),
                                            static_cast<int>(argc),
-                                           SQLITE_UTF8
-                                               | (test_flags(flags, fn_flags::allow_indirect)
-                                                      ? 0
-                                                      : SQLITE_DIRECTONLY)
-                                               | (test_flags(flags, fn_flags::nondeterministic)
-                                                      ? 0
-                                                      : SQLITE_DETERMINISTIC),
+                                           flags_i,
                                            wrapper.get(),
                                            &invoke_fn_wrapper_shared_ptr,
                                            nullptr,

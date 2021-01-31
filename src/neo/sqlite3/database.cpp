@@ -1,10 +1,10 @@
 #include "./database.hpp"
 
 #include <neo/sqlite3/blob.hpp>
-#include <neo/sqlite3/c/sqlite3.h>
 #include <neo/sqlite3/statement.hpp>
 
 #include <neo/ufmt.hpp>
+#include <sqlite3/sqlite3.h>
 
 using namespace neo;
 using namespace neo::sqlite3;
@@ -14,7 +14,7 @@ using std::string_view;
 std::optional<database> database::open(const string& db_name, std::error_code& ec) noexcept {
     ::sqlite3* new_db = nullptr;
     set_error_code(ec, ::sqlite3_open(db_name.data(), &new_db));
-    if (ec) {
+    if (!new_db) {
         return std::nullopt;
     }
     // Enabled extended result codes on our new database
@@ -73,6 +73,9 @@ bool database_ref::is_transaction_active() const noexcept {
 std::int64_t database_ref::last_insert_rowid() const noexcept {
     return ::sqlite3_last_insert_rowid(c_ptr());
 }
+
+int database_ref::changes() const noexcept { return ::sqlite3_changes(c_ptr()); }
+int database_ref::total_changes() const noexcept { return ::sqlite3_total_changes(c_ptr()); }
 
 blob database_ref::open_blob(const string& table, const string& column, std::int64_t rowid) {
     return open_blob("main", table, column, rowid);

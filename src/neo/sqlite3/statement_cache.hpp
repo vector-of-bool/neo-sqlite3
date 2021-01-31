@@ -35,6 +35,8 @@ class statement_cache {
 public:
     explicit statement_cache(database_ref db) noexcept;
     ~statement_cache();
+    statement_cache(statement_cache&&) noexcept;
+    statement_cache& operator=(statement_cache&&) noexcept;
 
     /**
      * @brief Obtain a reference to a prepared statement for the given SQL
