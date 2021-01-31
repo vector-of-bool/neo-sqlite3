@@ -13,7 +13,7 @@ jobs:
           echo Downloading DDS executable
           pwsh -noni -c iwr https://github.com/vector-of-bool/dds/releases/download/0.1.0-alpha.6/dds-win-x64.exe -OutFile dds.exe || exit 1
           echo Build
-          .\dds.exe build -t tools/msvc.jsonc
+          .\dds.exe build -t tools/msvc.jsonc -TD conf/
         displayName: Build and Run Unit Tests
 
   - job: linux_gcc10
@@ -29,7 +29,7 @@ jobs:
           curl -L https://github.com/vector-of-bool/dds/releases/download/0.1.0-alpha.6/dds-linux-x64 -o dds
           chmod +x dds
         displayName: Prepare System
-      - script: ./dds build -t tools/gcc-10.jsonc
+      - script: ./dds build -t tools/gcc-10.jsonc -TD conf/
         displayName: Build and Run Unit Tests
 
   - job: macos_gcc10
@@ -44,5 +44,5 @@ jobs:
           curl -L https://github.com/vector-of-bool/dds/releases/download/0.1.0-alpha.6/dds-macos-x64 -o dds
           chmod +x dds
         displayName: Prepare System
-      - script: ./dds build -t tools/gcc-10.jsonc
+      - script: ./dds build -t tools/gcc-10.jsonc -TD conf/
         displayName: Build and Run Unit Tests
