@@ -1,6 +1,7 @@
 #include "./exec.hpp"
 
 #include <neo/sqlite3/iter_tuples.hpp>
+#include <neo/sqlite3/next.hpp>
 #include <neo/sqlite3/statement_cache.hpp>
 
 #include "./tests.inl"
@@ -53,7 +54,6 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate rows") {
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate tuples") {
     using namespace neo::sqlite3::literals;
-    auto db = neo::sqlite3::create_memory_db();
     db.exec(R"(
         CREATE TABLE foo AS
         VALUES
@@ -71,4 +71,20 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate tuples") {
     CHECK(tup2 == std::tuple(4, 5, 6));
     ++it;
     CHECK(it == stop);
+}
+
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "exec with a range of tuples as bindings") {
+    db.exec(R"(
+        CREATE TABLE foo(age, name, score)
+    )");
+    std::vector<std::tuple<int, std::string, double>> values;
+    values.emplace_back(24, "Joe", 6.3);
+    values.emplace_back(18, "Amy", 42.1);
+    values.emplace_back(99, "George", 0.2);
+    auto before = db.total_changes();
+    neo::sqlite3::exec_each(db.prepare("INSERT INTO foo VALUES(?, ?, ?)"), values);
+    CHECK((db.total_changes() - before) == 3);
+
+    auto [sum] = neo::sqlite3::unpack_next<int>(db.prepare("SELECT sum(age) FROM foo"));
+    CHECK(sum == (24 + 18 + 99));
 }

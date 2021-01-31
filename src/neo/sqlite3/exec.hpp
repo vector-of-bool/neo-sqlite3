@@ -4,7 +4,9 @@
 #include <neo/sqlite3/iter_tuples.hpp>
 #include <neo/sqlite3/statement.hpp>
 
+#include <neo/concepts.hpp>
 #include <neo/fwd.hpp>
+#include <neo/range_concepts.hpp>
 
 #include <tuple>
 
@@ -66,6 +68,26 @@ template <typename... OutTypes, typename... Ts>
     st.reset();
     st.bindings() = bindings;
     return iter_tuples<OutTypes...>(st);
+}
+
+/**
+ * @brief Execute a prepared statement once for each tuple of bindings in  the given range.
+ *
+ * Given a prepared statement that accepts bindable parameters and a range of tuples,
+ * for each tuple `tup` in `tuples`, bind `tup` to the bindings of the prepared
+ * statement, then execute that statement until completion.
+ *
+ * @param st A prepared statement to execute
+ * @param tuples A range-of-tuples. The tuple type must meet `bindable_tuple`
+ */
+template <ranges::range TuplesRange>
+requires bindable_tuple<ranges::range_value_t<TuplesRange>>  //
+    void exec_each(statement_mutref st, TuplesRange&& tuples) {
+    for (auto&& tup : tuples) {
+        st->reset();
+        st->bindings() = tup;
+        st->run_to_completion();
+    }
 }
 
 }  // namespace neo::sqlite3
