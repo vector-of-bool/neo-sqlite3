@@ -3,6 +3,7 @@
 #include "./fwd.hpp"
 
 #include <neo/concepts.hpp>
+#include <neo/fwd.hpp>
 
 #include <cstdint>
 #include <functional>
