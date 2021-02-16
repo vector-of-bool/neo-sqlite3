@@ -3,6 +3,7 @@
 #include "./fwd.hpp"
 
 #include <neo/concepts.hpp>
+#include <neo/fwd.hpp>
 
 #include <cstdint>
 #include <functional>
@@ -71,12 +72,6 @@ public:
         }
     }
 
-    template <typename T,
-              typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
-    void bind(T v) {
-        _bind_nocopy(v);
-    }
-
     template <bindable T>
     decltype(auto) operator=(T&& t) {
         bind(t);
@@ -87,8 +82,8 @@ public:
 namespace detail {
 
 template <typename T>
-constexpr const T& view_if_string(const T& arg) noexcept {
-    return arg;
+constexpr auto view_if_string(const T& arg) noexcept {
+    return std::ref(arg);
 }
 
 inline std::string_view view_if_string(const std::string& str) noexcept { return str; }
@@ -97,7 +92,7 @@ inline std::string_view view_if_string(const std::string& str) noexcept { return
 template <typename... Ts>
 constexpr auto view_strings(const std::tuple<Ts...>& tup) noexcept {
     return std::apply([](const auto&... args)  //
-                      { return std::forward_as_tuple(view_if_string(NEO_FWD(args))...); },
+                      { return std::make_tuple(view_if_string(NEO_FWD(args))...); },
                       tup);
 }
 
