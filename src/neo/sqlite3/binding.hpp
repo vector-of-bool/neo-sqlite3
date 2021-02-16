@@ -72,12 +72,6 @@ public:
         }
     }
 
-    template <typename T,
-              typename = std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string_view>>>
-    void bind(T v) {
-        _bind_nocopy(v);
-    }
-
     template <bindable T>
     decltype(auto) operator=(T&& t) {
         bind(t);
