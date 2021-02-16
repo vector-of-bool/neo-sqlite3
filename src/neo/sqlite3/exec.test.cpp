@@ -88,3 +88,12 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "exec with a range of tuples as bind
     auto [sum] = neo::sqlite3::unpack_next<int>(db.prepare("SELECT sum(age) FROM foo"));
     CHECK(sum == (24 + 18 + 99));
 }
+
+TEST_CASE_METHOD(sqlite3_memory_db_fixture,
+                 "exec() with a std::string that converts to a string_view") {
+    db.exec("CREATE TABLE foo(name)");
+    neo::sqlite3::exec(db.prepare("INSERT INTO foo VALUES (?)"),
+                       std::forward_as_tuple(std::string("Joey")));
+    auto [name] = neo::sqlite3::unpack_next<std::string>(db.prepare("SELECT * FROM foo"));
+    CHECK(name == "Joey");
+}

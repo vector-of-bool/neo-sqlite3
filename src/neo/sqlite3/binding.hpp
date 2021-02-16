@@ -88,8 +88,8 @@ public:
 namespace detail {
 
 template <typename T>
-constexpr const T& view_if_string(const T& arg) noexcept {
-    return arg;
+constexpr auto view_if_string(const T& arg) noexcept {
+    return std::ref(arg);
 }
 
 inline std::string_view view_if_string(const std::string& str) noexcept { return str; }
@@ -98,7 +98,7 @@ inline std::string_view view_if_string(const std::string& str) noexcept { return
 template <typename... Ts>
 constexpr auto view_strings(const std::tuple<Ts...>& tup) noexcept {
     return std::apply([](const auto&... args)  //
-                      { return std::forward_as_tuple(view_if_string(NEO_FWD(args))...); },
+                      { return std::make_tuple(view_if_string(NEO_FWD(args))...); },
                       tup);
 }
 
