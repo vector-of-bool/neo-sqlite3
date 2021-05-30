@@ -1,6 +1,7 @@
 #include "./statement.hpp"
 
 #include "./database.hpp"
+#include "./errable.hpp"
 
 #include <neo/sqlite3/error.hpp>
 
@@ -33,24 +34,13 @@ errc statement::step(std::error_code& ec) noexcept {
     return rc;
 }
 
-void statement::run_to_completion() {
-    auto rc = run_to_completion(std::nothrow);
-    if (rc != errc::done) {
-        auto ec = make_error_code(rc);
-        throw_error(ec, "Failure while fully executing statement", database());
-    }
-}
-
-errc statement::run_to_completion(std::error_code& ec) noexcept {
-    auto rc = run_to_completion(std::nothrow);
-    ec      = make_error_code(rc);
-    return rc;
-}
-
-errc statement::run_to_completion(std::nothrow_t) noexcept {
+errable<void> statement::run_to_completion() noexcept {
     auto rc = step(std::nothrow);
     while (rc == more) {
         rc = step(std::nothrow);
+    }
+    if (is_error_rc(rc)) {
+        return {rc, "Error while fully executing statement", database()};
     }
     return rc;
 }

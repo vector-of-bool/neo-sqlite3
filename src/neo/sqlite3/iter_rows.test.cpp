@@ -19,7 +19,8 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic iteration") {
             (1, 2, 3),
             (4, 5, 6)
         )")
-        ->run_to_completion();
+        ->run_to_completion()
+        .throw_if_error();
     auto st   = *db.prepare("SELECT * FROM stuff");
     auto rng  = neo::sqlite3::iter_rows(st);
     auto iter = rng.begin();

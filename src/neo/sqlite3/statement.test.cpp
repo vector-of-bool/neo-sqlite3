@@ -78,8 +78,8 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Tuple bind") {
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Access column information") {
-    db.prepare("CREATE TABLE people (name, age, job)")->run_to_completion();
-    db.prepare("CREATE TABLE pets (name, species, owner)")->run_to_completion();
+    db.prepare("CREATE TABLE people (name, age, job)")->run_to_completion().throw_if_error();
+    db.prepare("CREATE TABLE pets (name, species, owner)")->run_to_completion().throw_if_error();
     auto st = *db.prepare(R"(
         SELECT
             people.name AS person_name,

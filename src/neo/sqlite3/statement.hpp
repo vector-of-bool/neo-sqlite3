@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./binding.hpp"
+#include "./errable.hpp"
 #include "./error.hpp"
 #include "./row.hpp"
 
@@ -178,9 +179,7 @@ public:
     /**
      * @brief Continually execute the statement until it is complete
      */
-    void               run_to_completion();
-    errc               run_to_completion(std::error_code& ec) noexcept;
-    [[nodiscard]] errc run_to_completion(std::nothrow_t) noexcept;
+    errable<void> run_to_completion() noexcept;
 
     /**
      * @brief Determine whether the statement is currently being executed.

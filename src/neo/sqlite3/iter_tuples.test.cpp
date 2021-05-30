@@ -16,7 +16,8 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate over some tuples") {
             (1, 2, 'STRING'),
             (2, 5, 'other')
         )")
-        ->run_to_completion();
+        ->run_to_completion()
+        .throw_if_error();
 
     auto st = *db.prepare("SELECT * FROM stuff");
 
