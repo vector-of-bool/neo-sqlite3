@@ -2,6 +2,8 @@
 
 #include "./fwd.hpp"
 
+#include "./errable.hpp"
+
 #include <neo/concepts.hpp>
 #include <neo/fwd.hpp>
 
@@ -36,35 +38,35 @@ concept bindable =
  */
 class binding {
     friend class binding_access;
-    const statement* _owner;
-    int              _index = 0;
+    statement* _owner;
+    int        _index = 0;
 
-    explicit binding(const statement& o, int idx)
+    explicit binding(statement& o, int idx)
         : _owner(&o)
         , _index(idx) {}
 
-    void _bind_double(double);
-    void _bind_i64(std::int64_t);
-    void _bind_str_nocopy(std::string_view s);
-    void _bind_str_copy(std::string_view s);
-    void _bind_null();
-    void _bind_zeroblob(zeroblob z);
+    errable<void> _bind_double(double);
+    errable<void> _bind_i64(std::int64_t);
+    errable<void> _bind_str_nocopy(std::string_view s);
+    errable<void> _bind_str_copy(std::string_view s);
+    errable<void> _bind_null();
+    errable<void> _bind_zeroblob(zeroblob z);
 
 public:
     template <bindable T>
-    void bind(const T& value) {
+    errable<void> bind(const T& value) {
         if constexpr (std::floating_point<T>) {
-            _bind_double(value);
+            return _bind_double(value);
         } else if constexpr (integral<T>) {
-            _bind_i64(value);
+            return _bind_i64(value);
         } else if constexpr (same_as<T, std::string_view>) {
-            _bind_str_nocopy(value);
+            return _bind_str_nocopy(value);
         } else if constexpr (convertible_to<T, std::string_view>) {
-            _bind_str_copy(value);
+            return _bind_str_copy(value);
         } else if constexpr (same_as<T, null_t>) {
-            _bind_null();
+            return _bind_null();
         } else if constexpr (same_as<T, zeroblob>) {
-            _bind_zeroblob(value);
+            return _bind_zeroblob(value);
         } else {
             static_assert(same_as<T, void>,
                           "This static_assertion should not fire. Please file a bug report with "
@@ -74,7 +76,7 @@ public:
 
     template <bindable T>
     decltype(auto) operator=(T&& t) {
-        bind(t);
+        bind(t).throw_if_error();
         return NEO_FWD(t);
     }
 };
@@ -122,7 +124,7 @@ concept bindable_tuple
  * @brief Access to modify the bindings of a prepared statement.
  */
 class binding_access {
-    const statement* _owner;
+    statement* _owner;
 
 public:
 private:
@@ -137,7 +139,7 @@ private:
     }
 
 public:
-    binding_access(const statement& o)
+    binding_access(statement& o)
         : _owner(&o) {}
 
     /**
@@ -146,8 +148,8 @@ public:
      * @param idx The index of the binding (First binding is at '1', NOT zero)
      * @return binding
      */
-    [[nodiscard]] binding operator[](int idx) const noexcept { return binding{*_owner, idx}; }
-    [[nodiscard]] binding operator[](const std::string& str) const noexcept {
+    [[nodiscard]] binding operator[](int idx) noexcept { return binding{*_owner, idx}; }
+    [[nodiscard]] binding operator[](const std::string& str) noexcept {
         return operator[](named_parameter_index(str));
     }
 
