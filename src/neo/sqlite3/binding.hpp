@@ -45,28 +45,28 @@ class binding {
         : _owner(&o)
         , _index(idx) {}
 
-    errable<void> _bind_double(double);
-    errable<void> _bind_i64(std::int64_t);
-    errable<void> _bind_str_nocopy(std::string_view s);
-    errable<void> _bind_str_copy(std::string_view s);
-    errable<void> _bind_null();
-    errable<void> _bind_zeroblob(zeroblob z);
-
 public:
+    errable<void> bind_double(double);
+    errable<void> bind_i64(std::int64_t);
+    errable<void> bind_str_nocopy(std::string_view s);
+    errable<void> bind_str_copy(std::string_view s);
+    errable<void> bind_null();
+    errable<void> bind_zeroblob(zeroblob z);
+
     template <bindable T>
     errable<void> bind(const T& value) {
         if constexpr (std::floating_point<T>) {
-            return _bind_double(value);
+            return bind_double(value);
         } else if constexpr (integral<T>) {
-            return _bind_i64(value);
+            return bind_i64(value);
         } else if constexpr (same_as<T, std::string_view>) {
-            return _bind_str_nocopy(value);
+            return bind_str_nocopy(value);
         } else if constexpr (convertible_to<T, std::string_view>) {
-            return _bind_str_copy(value);
+            return bind_str_copy(value);
         } else if constexpr (same_as<T, null_t>) {
-            return _bind_null();
+            return bind_null();
         } else if constexpr (same_as<T, zeroblob>) {
-            return _bind_zeroblob(value);
+            return bind_zeroblob(value);
         } else {
             static_assert(same_as<T, void>,
                           "This static_assertion should not fire. Please file a bug report with "
@@ -138,6 +138,19 @@ private:
         (_assign_one(static_cast<int>(Is), std::get<Is>(tup)), ...);
     }
 
+    template <typename H, typename... Tail>
+    errable<void> bind_next(int idx, const H& h, const Tail&... tail) noexcept {
+        auto e = operator[](idx).bind(h);
+        if (e.is_error()) {
+            return e;
+        }
+        if constexpr (sizeof...(tail)) {
+            return bind_next(idx + 1, h, tail...);
+        } else {
+            return errc::ok;
+        }
+    }
+
 public:
     binding_access(statement& o)
         : _owner(&o) {}
@@ -173,6 +186,15 @@ public:
     Tuple&& operator=(Tuple&& tup) {
         _assign_tup(tup, std::make_index_sequence<S>());
         return NEO_FWD(tup);
+    }
+
+    template <bindable... Ts>
+    errable<void> bind_all(const Ts&... ts) noexcept {
+        if constexpr (sizeof...(ts)) {
+            return bind_next(1, ts...);
+        } else {
+            return errc::ok;
+        }
     }
 };
 

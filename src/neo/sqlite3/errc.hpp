@@ -152,4 +152,8 @@ enum class errc : int {
     warning_autoindex           = 284,
 };
 
+constexpr bool is_error_rc(errc rc) noexcept {
+    return rc != errc::ok && rc != errc::done && rc != errc::row;
+}
+
 }  // namespace neo::sqlite3
