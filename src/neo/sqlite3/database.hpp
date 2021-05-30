@@ -78,22 +78,13 @@ public:
     /// Obtain the number of rows added/deleted/modified since the database connection was opened.
     [[nodiscard]] int total_changes() const noexcept;
 
-    [[nodiscard]] blob
-                       open_blob(const std::string& table, const std::string& column, std::int64_t rowid);
-    [[nodiscard]] blob open_blob(const std::string& db,
-                                 const std::string& table,
-                                 const std::string& column,
-                                 std::int64_t       rowid);
+    [[nodiscard]] errable<blob>
+    open_blob(const std::string& table, const std::string& column, std::int64_t rowid);
 
-    [[nodiscard]] std::optional<blob> open_blob(const std::string& table,
-                                                const std::string& column,
-                                                std::int64_t       rowid,
-                                                std::error_code&   ec);
-    [[nodiscard]] std::optional<blob> open_blob(const std::string& db,
-                                                const std::string& table,
-                                                const std::string& column,
-                                                std::int64_t       rowid,
-                                                std::error_code&   ec);
+    [[nodiscard]] errable<blob> open_blob(const std::string& db,
+                                          const std::string& table,
+                                          const std::string& column,
+                                          std::int64_t       rowid);
 
     /**
      * @brief Obtain an error message string related to the most recent error
@@ -163,21 +154,13 @@ public:
      * @param ec If opening failed, 'ec' will be set to the error that occurred
      * @return std::optional<database> Returns nullopt if opening failed, otherwise a new database
      */
-    [[nodiscard]] static std::optional<database> open(const std::string& s,
-                                                      std::error_code&   ec) noexcept;
-    /// Throwing variant of open()
-    [[nodiscard]] static database open(const std::string& s);
-
+    [[nodiscard]] static errable<database> open(const std::string& s) noexcept;
     /// Create a new in-memory database
-    [[nodiscard]] static database create_memory_db() { return open(":memory:"); }
+    [[nodiscard]] static errable<database> create_memory_db() { return open(":memory:"); }
 };
 
 [[nodiscard]] inline auto create_memory_db() { return database::create_memory_db(); }
 
 [[nodiscard]] inline auto open(const std::string& path) { return database::open(path); }
-
-[[nodiscard]] inline auto open(const std::string& path, std::error_code& ec) noexcept {
-    return database::open(path, ec);
-}
 
 }  // namespace neo::sqlite3
