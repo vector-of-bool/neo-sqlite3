@@ -5,8 +5,6 @@
 
 #include <neo/iterator_facade.hpp>
 
-#include <functional>
-
 namespace neo::sqlite3 {
 
 /**
@@ -16,9 +14,11 @@ namespace neo::sqlite3 {
  */
 template <typename... Ts>
 class iter_tuples {
-    std::reference_wrapper<statement> _st;
+    statement* _st = nullptr;
 
 public:
+    iter_tuples() = default;
+
     /**
      * @brief Create a new range-of-tuples that pull the result rows from the given
      * statement.
@@ -26,7 +26,7 @@ public:
      * @param st The statement from which we will pull results
      */
     explicit iter_tuples(statement& st)
-        : _st(st) {}
+        : _st(&st) {}
 
     /**
      * @brief Iterator that accesses the rows and automatically unpacks them as tuples
@@ -44,11 +44,10 @@ public:
         iterator() = default;
 
         using difference_type = std::ptrdiff_t;
-        using value_type      = std::tuple<Ts...>;
         enum { single_pass_iterator = true };
 
-        value_type dereference() const noexcept { return _it->unpack<Ts...>(); }
-        void       increment() { ++_it; }
+        auto dereference() const noexcept { return _it->unpack<Ts...>(); }
+        void increment() { ++_it; }
 
         struct sentinel_type {};
         bool operator==(sentinel_type) const noexcept { return at_end(); }
@@ -61,7 +60,10 @@ public:
      * Calling this function will execute the statement *once* to ready the first
      * result. Beware calling this multiple times.
      */
-    [[nodiscard]] iterator begin() const { return iterator(iter_rows(_st).begin()); }
+    [[nodiscard]] iterator begin() const {
+        neo_assert(expects, _st != nullptr, "Called begin() on default-constructed iter_tuples<>");
+        return iterator(iter_rows(*_st).begin());
+    }
 
     /**
      * @brief Obtain an end-sentinel for the tuple iterator
@@ -70,3 +72,17 @@ public:
 };
 
 }  // namespace neo::sqlite3
+
+#ifdef __has_include
+#if __has_include(<ranges/v3/range/concepts.hpp>)
+#include <ranges/v3/range/concepts.hpp>
+template <typename... Ts>
+constexpr inline bool ranges::v3::enable_view<neo::sqlite3::iter_tuples<Ts...>> = true;
+#endif
+
+#if __has_include(<ranges>)
+#include <ranges>
+template <typename... Ts>
+constexpr inline bool std::ranges::enable_view<neo::sqlite3::iter_tuples<Ts...>> = true;
+#endif
+#endif

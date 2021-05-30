@@ -1,14 +1,15 @@
 #pragma once
 
-#include <neo/sqlite3/statement.hpp>
+#include "./row.hpp"
 
 #include <neo/assert.hpp>
 #include <neo/iterator_facade.hpp>
 
-#include <cassert>
 #include <iterator>
 
 namespace neo::sqlite3 {
+
+class statement;
 
 /**
  * @brief A range over the results of a SQLite statement.
@@ -17,9 +18,11 @@ namespace neo::sqlite3 {
  * member.
  */
 class iter_rows {
-    std::reference_wrapper<statement> _st;
+    statement* _st = nullptr;
 
 public:
+    iter_rows() = default;
+
     /**
      * @brief Create a new range-of-rows that pulls results from the given
      * SQLite statement.
@@ -27,7 +30,7 @@ public:
      * @param st The statement from which to pull results
      */
     explicit iter_rows(statement& st)
-        : _st(st) {}
+        : _st(&st) {}
 
     /**
      * @brief Iterator to access the resulting rows from the statement.
@@ -36,13 +39,7 @@ public:
         friend class iter_rows;
         statement* _st = nullptr;
 
-        explicit iterator(statement& st)
-            : _st(&st) {
-            auto rc = st.step();
-            neo_assert(invariant,
-                       rc == errc::row || rc == errc::done,
-                       "Initial step returned an error");
-        }
+        explicit iterator(statement& st);
 
     public:
         constexpr iterator() = default;
@@ -51,26 +48,13 @@ public:
         using value_type      = row_access;
         enum { single_pass_iterator = true };
 
-        value_type dereference() const noexcept {
-            neo_assert(expects,
-                       _st != nullptr,
-                       "Dereference of row-iterator with no associated statement");
-            neo_assert(expects, !at_end(), "Dereference of finished row-iterator");
-            return _st->row();
-        }
+        value_type dereference() const noexcept;
 
-        void increment() {
-            neo_assert(expects,
-                       _st != nullptr,
-                       "Advanced of row-iterator with no associated statement");
-            neo_assert(expects, !at_end(), "Advance of a finished row-iterator");
-            auto rc = _st->step();
-            neo_assert(invariant, rc == errc::row || rc == errc::done, "step() returned an error");
-        }
+        void increment();
 
         struct sentinel_type {};
         bool operator==(sentinel_type) const noexcept { return at_end(); }
-        bool at_end() const noexcept { return !_st->is_busy(); }
+        bool at_end() const noexcept;
     };
 
     /**
@@ -79,7 +63,10 @@ public:
      * Calling this function will execute the statement *once* to ready the first
      * result. Beware calling this multiple times.
      */
-    [[nodiscard]] iterator begin() const noexcept { return iterator(_st); }
+    [[nodiscard]] iterator begin() const noexcept {
+        neo_assert(expects, _st != nullptr, "Called begin() on default-constructed iter_rows");
+        return iterator(*_st);
+    }
 
     /**
      * @brief Obtain an end-sentinel for the row iterator
@@ -88,3 +75,17 @@ public:
 };
 
 }  // namespace neo::sqlite3
+
+#ifdef __has_include
+#if __has_include(<ranges/v3/range/concepts.hpp>)
+#include <ranges/v3/range/concepts.hpp>
+template <>
+constexpr inline bool ranges::v3::enable_view<neo::sqlite3::iter_rows> = true;
+#endif
+
+#if __has_include(<ranges>)
+#include <ranges>
+template <>
+constexpr inline bool std::ranges::enable_view<neo::sqlite3::iter_rows> = true;
+#endif
+#endif

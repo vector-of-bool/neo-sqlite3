@@ -2,17 +2,22 @@
 
 #include "./binding.hpp"
 #include "./error.hpp"
-#include "./value_ref.hpp"
+#include "./row.hpp"
 
 #include <neo/assert.hpp>
-#include <neo/fwd.hpp>
 #include <neo/ref.hpp>
 
-#include <functional>
 #include <new>
-#include <optional>
-#include <tuple>
-#include <type_traits>
+
+namespace std {
+
+template <typename T>
+struct tuple_size;
+
+template <std::size_t I, typename T>
+struct tuple_element;
+
+}  // namespace std
 
 struct sqlite3_stmt;
 struct sqlite3;
@@ -20,16 +25,18 @@ struct sqlite3;
 namespace neo::sqlite3 {
 
 class statement;
-class database;
+class database_ref;
 class statement;
+template <typename... Ts>
+class typed_row;
 
 /**
  * @brief Access the metadata of a statement's result columns
  *
  */
 class column {
-    std::reference_wrapper<const statement> _owner;
-    int                                     _index = 0;
+    const statement* _owner;
+    int              _index = 0;
 
 public:
     /**
@@ -39,7 +46,7 @@ public:
      * @param idx The index of the column to access (zero-based)
      */
     column(const statement& st, int idx)
-        : _owner(st)
+        : _owner(&st)
         , _index(idx) {}
 
     // The name of the column
@@ -59,7 +66,7 @@ public:
  * @brief Access to the result column metadata of a SQLite statement.
  */
 class column_access {
-    std::reference_wrapper<const statement> _owner;
+    const statement* _owner;
 
 public:
     /**
@@ -68,7 +75,7 @@ public:
      * @param st The statement to access
      */
     explicit column_access(statement& st)
-        : _owner(st) {}
+        : _owner(&st) {}
 
     /**
      * @brief Access the column at the given index
@@ -77,7 +84,7 @@ public:
      */
     [[nodiscard]] column operator[](int idx) const noexcept {
         neo_assert(expects, idx < count(), "Column index is out-of-range", idx, count());
-        return column{_owner, idx};
+        return column{*_owner, idx};
     }
 
     [[nodiscard]] int count() const noexcept;
@@ -86,36 +93,7 @@ public:
 /**
  * @brief Access the result row of an in-progress SQLite statement.
  */
-class row_access {
-    std::reference_wrapper<const statement> _owner;
-
-    template <typename... Ts, std::size_t... Is>
-    std::tuple<Ts...> _unpack(std::index_sequence<Is...>) const {
-        return std::tuple<Ts...>((*this)[Is].as<Ts>()...);
-    }
-
-public:
-    /// Get access to the results of the given statement.
-    row_access(const statement& o) noexcept
-        : _owner(o) {}
-
-    /**
-     * @brief Obtain the value at the given index (zero-based)
-     *
-     * @param idx The column index. Left-most is index zero.
-     */
-    [[nodiscard]] value_ref operator[](int idx) const noexcept;
-
-    /**
-     * @brief Unpack the entire row into a typed tuple.
-     *
-     * @tparam Ts The types of the columns of the result
-     */
-    template <typename... Ts>
-    [[nodiscard]] std::tuple<Ts...> unpack() const {
-        return _unpack<Ts...>(std::index_sequence_for<Ts...>());
-    }
-};
+class row_access;
 
 /**
  * @brief A prepared statement returns by database{_ref}::prepare
@@ -195,16 +173,14 @@ public:
      *           sqlite3::error_category()
      * @return errc The raw result code of executing the statement.
      */
-    [[nodiscard]] errc step(std::error_code& ec) noexcept;
+    errc step(std::error_code& ec) noexcept;
 
     /**
      * @brief Continually execute the statement until it is complete
      */
-    void run_to_completion() {
-        while (step() == more) {
-            /* Keep going */
-        }
-    }
+    void               run_to_completion();
+    errc               run_to_completion(std::error_code& ec) noexcept;
+    [[nodiscard]] errc run_to_completion(std::nothrow_t) noexcept;
 
     /**
      * @brief Determine whether the statement is currently being executed.
@@ -228,6 +204,9 @@ public:
      * @brief Access the columne metadata of this statement.
      */
     [[nodiscard]] auto columns() noexcept { return column_access{*this}; }
+
+    /// Get a reference to the database associated with this statement
+    [[nodiscard]] database_ref database() noexcept;
 };
 
 /**
@@ -239,3 +218,13 @@ public:
 using statement_mutref = neo::mutref<statement>;
 
 }  // namespace neo::sqlite3
+
+template <typename... Ts>
+struct std::tuple_size<neo::sqlite3::typed_row<Ts...>> {
+    constexpr static std::size_t value = sizeof...(Ts);
+};
+
+template <std::size_t I, typename... Ts>
+struct std::tuple_element<I, neo::sqlite3::typed_row<Ts...>> {
+    using type = neo::sqlite3::typed_row<Ts...>::template nth_type<I>;
+};

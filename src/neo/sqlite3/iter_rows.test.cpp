@@ -1,8 +1,16 @@
 #include "./iter_rows.hpp"
 
 #include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/statement.hpp>
 
 #include "./tests.inl"
+
+#if __has_include(<ranges>)
+#include <ranges>
+
+static_assert(std::ranges::view<neo::sqlite3::iter_rows>);
+static_assert(std::ranges::input_range<neo::sqlite3::iter_rows>);
+#endif
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic iteration") {
     db.prepare(R"(
@@ -11,8 +19,8 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic iteration") {
             (1, 2, 3),
             (4, 5, 6)
         )")
-        .run_to_completion();
-    auto st   = db.prepare("SELECT * FROM stuff");
+        ->run_to_completion();
+    auto st   = *db.prepare("SELECT * FROM stuff");
     auto rng  = neo::sqlite3::iter_rows(st);
     auto iter = rng.begin();
     auto stop = rng.end();

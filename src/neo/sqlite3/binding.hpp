@@ -6,9 +6,9 @@
 #include <neo/fwd.hpp>
 
 #include <cstdint>
-#include <functional>
 #include <string>
 #include <string_view>
+#include <tuple>
 
 namespace neo::sqlite3 {
 
@@ -36,11 +36,11 @@ concept bindable =
  */
 class binding {
     friend class binding_access;
-    std::reference_wrapper<const statement> _owner;
-    int                                     _index = 0;
+    const statement* _owner;
+    int              _index = 0;
 
     explicit binding(const statement& o, int idx)
-        : _owner(o)
+        : _owner(&o)
         , _index(idx) {}
 
     void _bind_double(double);
@@ -82,18 +82,22 @@ public:
 namespace detail {
 
 template <typename T>
-constexpr auto view_if_string(const T& arg) noexcept {
-    return std::ref(arg);
+constexpr const T& view_if_string(const T& arg) noexcept {
+    return arg;
 }
 
 inline std::string_view view_if_string(const std::string& str) noexcept { return str; }
 
+template <typename Tup, std::size_t... Idx>
+constexpr auto view_strings_1(const Tup& tup, std::index_sequence<Idx...>) noexcept {
+    return std::tuple<decltype(view_if_string(std::get<Idx>(tup)))...>(
+        view_if_string(std::get<Idx>(tup))...);
+}
+
 /// Given a tuple, convert each std::string into a std::string_view
 template <typename... Ts>
 constexpr auto view_strings(const std::tuple<Ts...>& tup) noexcept {
-    return std::apply([](const auto&... args)  //
-                      { return std::make_tuple(view_if_string(NEO_FWD(args))...); },
-                      tup);
+    return view_strings_1(tup, std::index_sequence_for<Ts...>{});
 }
 
 template <typename Tuple, std::size_t... Is>
@@ -118,7 +122,7 @@ concept bindable_tuple
  * @brief Access to modify the bindings of a prepared statement.
  */
 class binding_access {
-    std::reference_wrapper<const statement> _owner;
+    const statement* _owner;
 
 public:
 private:
@@ -134,7 +138,7 @@ private:
 
 public:
     binding_access(const statement& o)
-        : _owner(o) {}
+        : _owner(&o) {}
 
     /**
      * @brief Access the binding at 1-based-index 'idx'
@@ -142,7 +146,7 @@ public:
      * @param idx The index of the binding (First binding is at '1', NOT zero)
      * @return binding
      */
-    [[nodiscard]] binding operator[](int idx) const noexcept { return binding{_owner, idx}; }
+    [[nodiscard]] binding operator[](int idx) const noexcept { return binding{*_owner, idx}; }
     [[nodiscard]] binding operator[](const std::string& str) const noexcept {
         return operator[](named_parameter_index(str));
     }

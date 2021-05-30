@@ -32,36 +32,28 @@ database database::open(const std::string& s) {
     return std::move(*ret);
 }
 
-std::optional<statement> database_ref::prepare(string_view query, std::error_code& ec) noexcept {
+errable<statement> database_ref::prepare(string_view query) noexcept {
     const char*     str_tail = nullptr;
     ::sqlite3_stmt* stmt     = nullptr;
 
-    ec = to_error_code(::sqlite3_prepare_v2(c_ptr(),
-                                            query.data(),
-                                            static_cast<int>(query.size()),
-                                            &stmt,
-                                            &str_tail));
-    if (ec) {
-        return std::nullopt;
+    auto rc = errc{::sqlite3_prepare_v2(c_ptr(),
+                                        query.data(),
+                                        static_cast<int>(query.size()),
+                                        &stmt,
+                                        &str_tail)};
+    if (rc != errc::ok) {
+        return {rc, "Failure while preparing database statement", *this};
     }
     return statement(std::move(stmt));
 }
 
-statement database_ref::prepare(std::string_view query) {
-    std::error_code ec;
-    auto            ret = prepare(query, ec);
-    if (ec) {
-        throw_error(ec, ufmt("Failed to prepare statement [[{}]]", query), error_message());
-    }
-    return std::move(*ret);
-}
-
-void database_ref::exec(const std::string& code) {
+errable<void> database_ref::exec(const std::string& code) {
     char* errmsg = nullptr;
-    auto  rc     = ::sqlite3_exec(c_ptr(), code.data(), nullptr, nullptr, &errmsg);
-    if (rc) {
-        throw_error(to_error_code(rc), "::sqlite3_exec() failed", errmsg);
+    auto  rc     = errc{::sqlite3_exec(c_ptr(), code.data(), nullptr, nullptr, &errmsg)};
+    if (rc != errc::ok) {
+        return {errant, rc, "::sqlite3_exec() failed", *this};
     }
+    return {};
 }
 
 void database::_close() noexcept { ::sqlite3_close(_exchange_ptr(nullptr)); }

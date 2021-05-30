@@ -1,5 +1,7 @@
 #pragma once
 
+#include "./errable.hpp"
+
 #include <neo/assert.hpp>
 
 #include <optional>
@@ -58,17 +60,14 @@ public:
      * @param ec An output parameter for any error information
      * @return std::optional<statement> Returns nullopt on error, otherwise a new statement object
      */
-    [[nodiscard]] std::optional<statement> prepare(std::string_view query,
-                                                   std::error_code& ec) noexcept;
-    /// Throwing variant of prepare()
-    [[nodiscard]] statement prepare(std::string_view query);
+    [[nodiscard]] errable<statement> prepare(std::string_view query) noexcept;
 
     /**
      * @brief Execute a sequence of semicolon-separated SQL statements.
      *
      * @param code A SQL script to run.
      */
-    void exec(const std::string& code);
+    errable<void> exec(const std::string& code);
 
     /// Determine whether there is an active transaction on the database
     [[nodiscard]] bool is_transaction_active() const noexcept;

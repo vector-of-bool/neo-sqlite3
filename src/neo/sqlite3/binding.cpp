@@ -8,7 +8,7 @@
 
 using namespace neo::sqlite3;
 
-#define OWNER_STMT_PTR (_owner.get().c_ptr())
+#define OWNER_STMT_PTR (_owner->c_ptr())
 
 void binding::_bind_double(double d) {
     auto ec = to_error_code(::sqlite3_bind_double(OWNER_STMT_PTR, _index, d));

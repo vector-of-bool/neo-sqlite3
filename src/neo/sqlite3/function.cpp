@@ -89,7 +89,7 @@ void detail::register_function(::sqlite3*                               db_,
     if (ec) {
         throw_error(ec,
                     ufmt("Error while creating a scalar function '{}'", name),
-                    ::sqlite3_errmsg(db));
+                    database_ref(db));
     }
     // Our shared_ptr is now in the care of SQLite. It will call our destroy
     // callback when needed.

@@ -1,5 +1,7 @@
 #include "./statement.hpp"
 
+#include "./database.hpp"
+
 #include <neo/sqlite3/error.hpp>
 
 #include <sqlite3/sqlite3.h>
@@ -19,9 +21,8 @@ void statement::reset() noexcept {
 errc statement::step() {
     auto result = step(std::nothrow);
     if (result != errc::done && result != errc::row) {
-        auto db = ::sqlite3_db_handle(c_ptr());
         auto ec = make_error_code(result);
-        throw_error(ec, "Failure while executing statement", ::sqlite3_errmsg(db));
+        throw_error(ec, "Failure while executing statement", database());
     }
     return errc{result};
 }
@@ -29,6 +30,28 @@ errc statement::step() {
 errc statement::step(std::error_code& ec) noexcept {
     auto rc = step(std::nothrow);
     ec      = make_error_code(rc);
+    return rc;
+}
+
+void statement::run_to_completion() {
+    auto rc = run_to_completion(std::nothrow);
+    if (rc != errc::done) {
+        auto ec = make_error_code(rc);
+        throw_error(ec, "Failure while fully executing statement", database());
+    }
+}
+
+errc statement::run_to_completion(std::error_code& ec) noexcept {
+    auto rc = run_to_completion(std::nothrow);
+    ec      = make_error_code(rc);
+    return rc;
+}
+
+errc statement::run_to_completion(std::nothrow_t) noexcept {
+    auto rc = step(std::nothrow);
+    while (rc == more) {
+        rc = step(std::nothrow);
+    }
     return rc;
 }
 
@@ -45,19 +68,9 @@ errc statement::step(std::nothrow_t) noexcept {
 
 bool statement::is_busy() const noexcept { return ::sqlite3_stmt_busy(_stmt_ptr) != 0; }
 
-#define OWNER_STMT_PTR (_owner.get().c_ptr())
+database_ref statement::database() noexcept { return database_ref(::sqlite3_db_handle(c_ptr())); }
 
-value_ref row_access::operator[](int idx) const noexcept {
-    auto col_count = ::sqlite3_column_count(OWNER_STMT_PTR);
-    neo_assert(expects,
-               _owner.get().is_busy(),
-               "Attemptd to access value from a row in and idle statement. Either `step()` was "
-               "never called, or the statement needs to be `reset()`",
-               idx);
-    neo_assert(expects, idx < col_count, "Access to column beyond-the-end", idx, col_count);
-    auto val = ::sqlite3_column_value(OWNER_STMT_PTR, idx);
-    return value_ref(val);
-}
+#define OWNER_STMT_PTR (_owner->c_ptr())
 
 int column_access::count() const noexcept { return ::sqlite3_column_count(OWNER_STMT_PTR); }
 

@@ -1,5 +1,7 @@
 #include "./error.hpp"
 
+#include "./database.hpp"
+
 #include <neo/assert.hpp>
 #include <neo/ufmt.hpp>
 #include <sqlite3/sqlite3.h>
@@ -26,17 +28,24 @@ class sqlite3_category : public std::error_category {
 
 neo::sqlite3::error::error(std::error_code  ec,
                            std::string_view message,
-                           std::string_view sup) noexcept
-    : std::runtime_error(neo::ufmt("{} [{}]: {}", message, sup, ec.message())) {}
+                           std::string_view db_msg) noexcept
+    : std::runtime_error(neo::ufmt("{} [{}]: {}", message, db_msg, ec.message()))
+    , _db_message(db_msg) {}
 
 const std::error_category& neo::sqlite3::error_category() noexcept {
     static sqlite3_category inst;
     return inst;
 }
 
+void neo::sqlite3::throw_error(const std::error_code& ec,
+                               std::string_view       message,
+                               const database_ref&    db) {
+    throw_error(ec, message, db.error_message());
+}
+
 [[noreturn]] void neo::sqlite3::throw_error(const std::error_code& ec,
                                             std::string_view       message,
-                                            std::string_view       sup) {
+                                            std::string_view       db_msg) {
     neo_assert_always(expects,
                       ec.category() == sqlite3::error_category(),
                       "neo::sqlite3::throw_error() should only be given errors codes of the "
@@ -48,7 +57,7 @@ const std::error_category& neo::sqlite3::error_category() noexcept {
     switch (e_ec) {
 #define CASE(Code)                                                                                 \
     case errc::Code:                                                                               \
-        throw errc_error<errc::Code>(message, sup)
+        throw errc_error<errc::Code>(message, db_msg)
 
         CASE(abort);
         CASE(auth);
