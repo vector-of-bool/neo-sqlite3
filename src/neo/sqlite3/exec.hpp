@@ -63,7 +63,7 @@ template <bindable... Ts>
  * @return A range of tuples corresponding to the values in the rows
  */
 template <typename... OutTypes, bindable... Ts>
-[[nodiscard]] errable<iter_tuples<OutTypes...>> exec_tuples(statement& st, Ts&... bindings) {
+[[nodiscard]] errable<iter_tuples<OutTypes...>> exec_tuples(statement& st, const Ts&... bindings) {
     auto e = reset_and_bind(st, bindings...);
     if (e.is_error()) {
         return e.errc();

@@ -17,6 +17,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute some queries") {
     CHECK(it->get<0>() == 4);
     ++it;
     CHECK(it->get<0>() == 57);
+    ++it;
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute with a cache") {
