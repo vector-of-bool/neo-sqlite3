@@ -35,7 +35,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Interrupt an operation") {
     rc = p.step();
     CHECK(rc == neo::sqlite3::errc::row);
     db.interrupt();
-    rc = p.step(std::nothrow);
+    rc = p.step();
     CHECK(rc == neo::sqlite3::errc::interrupt);
     rc = p.step();
     CHECK(rc == neo::sqlite3::errc::row);

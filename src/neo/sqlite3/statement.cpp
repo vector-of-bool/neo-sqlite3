@@ -19,33 +19,15 @@ void statement::reset() noexcept {
     ::sqlite3_reset(c_ptr());
 }
 
-errc statement::step() {
-    auto result = step(std::nothrow);
-    if (result != errc::done && result != errc::row) {
-        auto ec = make_error_code(result);
-        throw_error(ec, "Failure while executing statement", database());
-    }
-    return errc{result};
-}
-
-errc statement::step(std::error_code& ec) noexcept {
-    auto rc = step(std::nothrow);
-    ec      = make_error_code(rc);
-    return rc;
-}
-
 errable<void> statement::run_to_completion() noexcept {
-    auto rc = step(std::nothrow);
-    while (rc == more) {
-        rc = step(std::nothrow);
+    auto res = step();
+    while (res == errc::row) {
+        res = step();
     }
-    if (is_error_rc(rc)) {
-        return {rc, "Error while fully executing statement", database()};
-    }
-    return rc;
+    return res;
 }
 
-errc statement::step(std::nothrow_t) noexcept {
+errable<void> statement::step() noexcept {
     auto result = ::sqlite3_step(c_ptr());
     neo_assert_always(expects,
                       result != SQLITE_MISUSE,

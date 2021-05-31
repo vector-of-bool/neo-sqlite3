@@ -140,41 +140,12 @@ public:
     [[nodiscard]] sqlite3_stmt* release() noexcept { return std::exchange(_stmt_ptr, nullptr); }
 
     /**
-     * @brief Execute one step of the prepared statement.
-     *
-     * Returns the result code of executing one step. If the result returned
-     * from step() is neither errc::row nor errc::done, then this will throw
-     * a 'sqlite3::errc_error` exception corresponding to the result code.
-     *
-     * @return errc The result of execution. Fort his overload, either errc::done
-     *         or errc::row.
-     */
-    errc step();
-
-    /**
      * @brief Execute one step of the prepared statement, and return the result
-     * code unconditionally.
+     * code.
      *
-     * Unlike the zero-argument form, this method will return the result code
-     * of executing the statement one step, but will not throw an exception in
-     * case of normal error.
-     *
-     * @note There is one condition: We assert() against errc::misuse. If SQLite
-     *       detects a misuse of the library, the program will terminate.
-     *
-     * @return errc The result code of a single step. Will never be errc::misuse
+     * @return errable<void> The result code of a single step. Will never be errc::misuse
      */
-    [[nodiscard]] errc step(std::nothrow_t) noexcept;
-
-    /**
-     * @brief Execute one step of the prepared statement, and place the result
-     *        into a 'std::error_code'
-     *
-     * @param ec Output parameter for the error code. Will always be of the
-     *           sqlite3::error_category()
-     * @return errc The raw result code of executing the statement.
-     */
-    errc step(std::error_code& ec) noexcept;
+    errable<void> step() noexcept;
 
     /**
      * @brief Continually execute the statement until it is complete
