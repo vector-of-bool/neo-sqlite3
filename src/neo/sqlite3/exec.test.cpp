@@ -90,7 +90,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "exec with a range of tuples as bind
     CHECK((db.total_changes() - before) == 3);
 
     auto st    = *db.prepare("SELECT sum(age) FROM foo");
-    auto [sum] = neo::sqlite3::unpack_next<int>(st).as_tuple();
+    auto [sum] = neo::sqlite3::unpack_next<int>(st)->as_tuple();
     CHECK(sum == (24 + 18 + 99));
 }
 
@@ -99,6 +99,6 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture,
     db.exec("CREATE TABLE foo(name)").throw_if_error();
     neo::sqlite3::exec(*db.prepare("INSERT INTO foo VALUES (?)"), "Joey").throw_if_error();
     auto st     = *db.prepare("SELECT * FROM foo");
-    auto [name] = neo::sqlite3::unpack_next<std::string>(st);
+    auto [name] = *neo::sqlite3::unpack_next<std::string>(st);
     CHECK(name == "Joey");
 }

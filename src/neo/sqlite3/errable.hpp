@@ -49,6 +49,8 @@ public:
             throw_error();
         }
     }
+
+    constexpr bool operator==(enum errc ec) const noexcept { return errc() == ec; }
 };
 
 template <>
@@ -86,36 +88,48 @@ public:
     constexpr bool has_value() const noexcept { return _value.has_value(); }
 
     constexpr T* operator->() noexcept {
-        throw_if_error();
+        if (!has_value()) {
+            throw_error();
+        };
         return &**this;
     }
 
     constexpr const T* operator->() const noexcept {
-        throw_if_error();
+        if (!has_value()) {
+            throw_error();
+        };
         return &**this;
     }
 
-#define DECL_GETTER(Name, ArgList, CallList)                                                       \
-    constexpr T& Name ArgList& {                                                                   \
-        throw_if_error CallList;                                                                   \
+#define DECL_GETTER(Name)                                                                          \
+    constexpr T& Name()& {                                                                         \
+        if (!has_value()) {                                                                        \
+            throw_error();                                                                         \
+        }                                                                                          \
         return _value.get();                                                                       \
     }                                                                                              \
-    constexpr const T& Name ArgList const& {                                                       \
-        throw_if_error CallList;                                                                   \
+    constexpr const T& Name() const& {                                                             \
+        if (!has_value()) {                                                                        \
+            throw_error();                                                                         \
+        }                                                                                          \
         return _value.get();                                                                       \
     }                                                                                              \
-    constexpr T&& Name ArgList&& {                                                                 \
-        throw_if_error CallList;                                                                   \
+    constexpr T&& Name()&& {                                                                       \
+        if (!has_value()) {                                                                        \
+            throw_error();                                                                         \
+        }                                                                                          \
         return std::move(_value.get());                                                            \
     }                                                                                              \
-    constexpr const T&& Name ArgList const&& {                                                     \
-        throw_if_error CallList;                                                                   \
+    constexpr const T&& Name() const&& {                                                           \
+        if (!has_value()) {                                                                        \
+            throw_error();                                                                         \
+        }                                                                                          \
         return std::move(_value.get());                                                            \
     }                                                                                              \
     static_assert(true)
 
-    DECL_GETTER(value, (), ());
-    DECL_GETTER(operator*,(), ());
+    DECL_GETTER(value);
+    DECL_GETTER(operator*);
 
 #undef DECL_GETTER
 };
