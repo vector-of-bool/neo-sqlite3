@@ -1,6 +1,7 @@
 #include <neo/sqlite3/function.hpp>
-#include <neo/sqlite3/single.hpp>
 
+#include "./next.hpp"
+#include "./statement.hpp"
 #include "./tests.inl"
 
 TEST_CASE("Wrap a callable") {}
@@ -8,14 +9,14 @@ TEST_CASE("Wrap a callable") {}
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Create a simple custom function") {
     db.register_function("just_five", [] { return 5; });
     auto st      = *db.prepare("SELECT just_five()");
-    auto [value] = neo::sqlite3::unpack_single<int>(st);
+    auto [value] = *neo::sqlite3::unpack_next<int>(st);
     CHECK(value == 5);
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Function with arguments") {
     db.register_function("three_more_than", [](int n) { return n + 3; });
     auto st      = *db.prepare("SELECT three_more_than(4)");
-    auto [value] = neo::sqlite3::unpack_single<int>(st);
+    auto [value] = *neo::sqlite3::unpack_next<int>(st);
     CHECK(value == 7);
 }
 
