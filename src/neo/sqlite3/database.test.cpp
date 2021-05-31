@@ -14,7 +14,8 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "exec() some code") {
     db.exec(R"(
         CREATE TABLE stuff (foo);
         CREATE TABLE others (bar);
-    )");
+    )")
+        .throw_if_error();
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Interrupt an operation") {
@@ -26,14 +27,15 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Interrupt an operation") {
             (1, 4),
             (1, 5)
         ;
-    )");
-    auto p  = db.prepare("SELECT * FROM stuff");
+    )")
+        .throw_if_error();
+    auto p  = *db.prepare("SELECT * FROM stuff");
     auto rc = p.step();
     CHECK(rc == neo::sqlite3::errc::row);
     rc = p.step();
     CHECK(rc == neo::sqlite3::errc::row);
     db.interrupt();
-    rc = p.step(std::nothrow);
+    rc = p.step();
     CHECK(rc == neo::sqlite3::errc::interrupt);
     rc = p.step();
     CHECK(rc == neo::sqlite3::errc::row);
@@ -48,9 +50,10 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Count changes") {
             (1, 4),
             (1, 5)
         ;
-    )");
+    )")
+        .throw_if_error();
     CHECK(db.changes() == 4);
-    db.exec("DELETE FROM stuff WHERE foo = 1 AND bar == 3");
+    db.exec("DELETE FROM stuff WHERE foo = 1 AND bar == 3").throw_if_error();
     CHECK(db.changes() == 1);
     CHECK(db.total_changes() == 5);
 }

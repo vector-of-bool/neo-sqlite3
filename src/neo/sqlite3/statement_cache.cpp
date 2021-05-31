@@ -25,7 +25,7 @@ statement& statement_cache::operator()(sql_string_literal key) {
                                              });
     if (insert_point == _statements.end() || insert_point->key != key) {
         // Need to generate a new statement
-        auto new_st = database_ref(_db).prepare(key.string());
+        auto new_st = *database_ref(_db).prepare(key.string());
         auto iter   = _statements.emplace(insert_point,
                                         detail::cached_statement_item{key,
                                                                       std::make_unique<statement>(

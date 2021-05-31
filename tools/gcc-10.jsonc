@@ -1,5 +1,8 @@
 {
     "compiler_id": "gnu",
     "cxx_compiler": "g++-10",
-    "cxx_version": "c++20"
+    "cxx_version": "c++20",
+    "warning_flags": "-Werror",
+    "debug": true,
+    "optimize": false
 }
