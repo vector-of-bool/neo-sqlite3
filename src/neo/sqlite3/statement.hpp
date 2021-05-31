@@ -7,6 +7,7 @@
 
 #include <neo/assert.hpp>
 #include <neo/ref.hpp>
+#include <neo/utility.hpp>
 
 #include <new>
 
@@ -20,6 +21,7 @@ class database_ref;
 class statement;
 template <typename... Ts>
 class typed_row;
+class auto_reset;
 
 /**
  * @brief Access the metadata of a statement's result columns
@@ -167,6 +169,8 @@ public:
 
     /// Get a reference to the database associated with this statement
     [[nodiscard]] database_ref database() noexcept;
+
+    [[nodiscard]] inline class auto_reset auto_reset() noexcept;
 };
 
 /**
@@ -176,5 +180,32 @@ public:
  * reference.
  */
 using statement_mutref = neo::mutref<statement>;
+
+class [[nodiscard]] auto_reset {
+    statement* _st = nullptr;
+
+public:
+    constexpr auto_reset() noexcept = default;
+    explicit auto_reset(statement & st) noexcept
+        : _st(&st) {}
+
+    auto_reset(auto_reset && o) noexcept
+        : _st(neo::take(o._st)) {}
+
+    auto_reset& operator=(auto_reset&& o) noexcept {
+        _st = neo::take(o._st);
+        return *this;
+    }
+
+    ~auto_reset() {
+        if (_st) {
+            _st->reset();
+        }
+    }
+};
+
+neo::sqlite3::auto_reset statement::auto_reset() noexcept {
+    return neo::sqlite3::auto_reset{*this};
+}
 
 }  // namespace neo::sqlite3
