@@ -1,7 +1,6 @@
 #pragma once
 
 #include <neo/sqlite3/iter_rows.hpp>
-#include <neo/sqlite3/statement.hpp>
 
 #include <neo/iterator_facade.hpp>
 

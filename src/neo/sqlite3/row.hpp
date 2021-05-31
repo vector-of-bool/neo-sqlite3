@@ -24,6 +24,11 @@ struct type_at<I, Head, Tail...> : type_at<I - 1, Tail...> {};
 class statement;
 class value_ref;
 
+/**
+ * @brief A database result row that has associated types at compile-time.
+ *
+ * @tparam Ts The types of the fields of the row
+ */
 template <typename... Ts>
 class typed_row;
 
@@ -55,18 +60,18 @@ public:
 
 template <typename... Ts>
 class typed_row {
-    const statement* _st;
+    row_access _row;
 
 public:
     explicit typed_row(const statement& st) noexcept
-        : _st(&st) {}
+        : _row(st) {}
 
     template <std::size_t Idx>
     using nth_type = detail::type_at<Idx, Ts...>::type;
 
     template <std::size_t Idx>
     decltype(auto) get() const {
-        return static_cast<nth_type<Idx>>(row_access(*_st)[Idx].template as<nth_type<Idx>>());
+        return static_cast<nth_type<Idx>>(_row[Idx].template as<nth_type<Idx>>());
     }
 
 private:

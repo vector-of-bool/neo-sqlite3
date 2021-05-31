@@ -1,6 +1,7 @@
 #include <neo/sqlite3/iter_tuples.hpp>
 
 #include "./tests.inl"
+#include "./statement.hpp"
 
 #if __has_include(<ranges>)
 #include <ranges>

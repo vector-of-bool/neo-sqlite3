@@ -10,12 +10,6 @@ iter_rows::iterator::iterator(statement& st)
     neo_assert(invariant, rc == errc::row || rc == errc::done, "Initial step returned an error");
 }
 
-row_access iter_rows::iterator::dereference() const noexcept {
-    neo_assert(expects, _st != nullptr, "Dereference of row-iterator with no associated statement");
-    neo_assert(expects, !at_end(), "Dereference of finished row-iterator");
-    return _st->row();
-}
-
 void iter_rows::iterator::increment() {
     neo_assert(expects, _st != nullptr, "Advanced of row-iterator with no associated statement");
     neo_assert(expects, !at_end(), "Advance of a finished row-iterator");

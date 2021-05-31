@@ -30,7 +30,7 @@ TEST_CASE("Destroys function objects") {
 
     CHECK(n_destroys == 0);
     {
-        auto db = neo::sqlite3::create_memory_db();
+        auto db = *neo::sqlite3::create_memory_db();
         db.register_function("dummy", fn);
         CHECK(n_destroys == 0);
     }
