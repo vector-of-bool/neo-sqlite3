@@ -8,20 +8,15 @@
 #include <neo/fwd.hpp>
 #include <neo/range_concepts.hpp>
 
-#include <tuple>
-
 namespace neo::sqlite3 {
 
 /**
- * @brief Reset and execute the prepared statement to completion.
- *
- * No parameters are bound. Generated rows are discarded
- *
- * @param st
+ * @brief Reset the given database statement and bind each given argument
  */
-inline void exec(statement_mutref st) {
-    st->reset();
-    st->run_to_completion();
+template <bindable... Args>
+errable<void> reset_and_bind(statement& st, const Args&... bindings) noexcept {
+    st.reset();
+    return st.bindings().bind_all(bindings...);
 }
 
 /**
@@ -32,13 +27,15 @@ inline void exec(statement_mutref st) {
  * @param st The statement to execute
  * @param bindings The bindings to apply to the prepared statement
  */
-template <typename... Ts>
-void exec(statement_mutref st, const std::tuple<Ts...>& bindings) {
-    st->reset();
+template <bindable... Args>
+errable<void> exec(statement_mutref st, const Args&... bindings) {
     // Because we are running to completion, we know that any strings will outlive the statement
     // execution, so we can convert every std::string to a string_view
-    st->bindings() = detail::view_strings(bindings);
-    st->run_to_completion();
+    auto e = reset_and_bind(st, detail::view_if_string(bindings)...);
+    if (e.is_error()) {
+        return e;
+    }
+    return st->run_to_completion();
 }
 
 /**
@@ -48,10 +45,12 @@ void exec(statement_mutref st, const std::tuple<Ts...>& bindings) {
  * @param bindings The parameter bindings for the prepared statement
  * @return A range of row objects.
  */
-template <typename... Ts>
-[[nodiscard]] auto exec_rows(statement& st, const std::tuple<Ts...>& bindings) {
-    st.reset();
-    st.bindings() = bindings;
+template <bindable... Ts>
+[[nodiscard]] errable<iter_rows> exec_rows(statement& st, const Ts&... bindings) {
+    auto e = reset_and_bind(st, bindings...);
+    if (e.is_error()) {
+        return e.errc();
+    }
     return iter_rows(st);
 }
 
@@ -63,10 +62,12 @@ template <typename... Ts>
  * @param bindings The parameter bindings for the prepared statement
  * @return A range of tuples corresponding to the values in the rows
  */
-template <typename... OutTypes, typename... Ts>
-[[nodiscard]] auto exec_tuples(statement& st, const std::tuple<Ts...>& bindings) {
-    st.reset();
-    st.bindings() = bindings;
+template <typename... OutTypes, bindable... Ts>
+[[nodiscard]] errable<iter_tuples<OutTypes...>> exec_tuples(statement& st, Ts&... bindings) {
+    auto e = reset_and_bind(st, bindings...);
+    if (e.is_error()) {
+        return e.errc();
+    }
     return iter_tuples<OutTypes...>(st);
 }
 
@@ -82,12 +83,16 @@ template <typename... OutTypes, typename... Ts>
  */
 template <ranges::range TuplesRange>
 requires bindable_tuple<ranges::range_value_t<TuplesRange>>  //
-    void exec_each(statement_mutref st, TuplesRange&& tuples) {
+    errable<void> exec_each(statement_mutref st, TuplesRange&& tuples) {
     for (auto&& tup : tuples) {
         st->reset();
         st->bindings() = tup;
-        st->run_to_completion();
+        auto res       = st->run_to_completion();
+        if (res.is_error()) {
+            return res;
+        }
     }
+    return errc::done;
 }
 
 }  // namespace neo::sqlite3

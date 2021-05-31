@@ -5,7 +5,7 @@
 using namespace neo::sqlite3::literals;
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic statement caching") {
-    auto                          db = neo::sqlite3::create_memory_db();
+    auto                          db = *neo::sqlite3::create_memory_db();
     neo::sqlite3::statement_cache cache{db};
 
     auto  q   = "SELECT 12"_sql;

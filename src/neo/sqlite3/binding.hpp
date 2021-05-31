@@ -2,13 +2,15 @@
 
 #include "./fwd.hpp"
 
+#include "./errable.hpp"
+
 #include <neo/concepts.hpp>
 #include <neo/fwd.hpp>
 
 #include <cstdint>
-#include <functional>
 #include <string>
 #include <string_view>
+#include <tuple>
 
 namespace neo::sqlite3 {
 
@@ -36,35 +38,35 @@ concept bindable =
  */
 class binding {
     friend class binding_access;
-    std::reference_wrapper<const statement> _owner;
-    int                                     _index = 0;
+    statement* _owner;
+    int        _index = 0;
 
-    explicit binding(const statement& o, int idx)
-        : _owner(o)
+    explicit binding(statement& o, int idx)
+        : _owner(&o)
         , _index(idx) {}
 
-    void _bind_double(double);
-    void _bind_i64(std::int64_t);
-    void _bind_str_nocopy(std::string_view s);
-    void _bind_str_copy(std::string_view s);
-    void _bind_null();
-    void _bind_zeroblob(zeroblob z);
-
 public:
+    errable<void> bind_double(double);
+    errable<void> bind_i64(std::int64_t);
+    errable<void> bind_str_nocopy(std::string_view s);
+    errable<void> bind_str_copy(std::string_view s);
+    errable<void> bind_null();
+    errable<void> bind_zeroblob(zeroblob z);
+
     template <bindable T>
-    void bind(const T& value) {
+    errable<void> bind(const T& value) {
         if constexpr (std::floating_point<T>) {
-            _bind_double(value);
+            return bind_double(value);
         } else if constexpr (integral<T>) {
-            _bind_i64(value);
+            return bind_i64(value);
         } else if constexpr (same_as<T, std::string_view>) {
-            _bind_str_nocopy(value);
+            return bind_str_nocopy(value);
         } else if constexpr (convertible_to<T, std::string_view>) {
-            _bind_str_copy(value);
+            return bind_str_copy(value);
         } else if constexpr (same_as<T, null_t>) {
-            _bind_null();
+            return bind_null();
         } else if constexpr (same_as<T, zeroblob>) {
-            _bind_zeroblob(value);
+            return bind_zeroblob(value);
         } else {
             static_assert(same_as<T, void>,
                           "This static_assertion should not fire. Please file a bug report with "
@@ -74,7 +76,7 @@ public:
 
     template <bindable T>
     decltype(auto) operator=(T&& t) {
-        bind(t);
+        bind(t).throw_if_error();
         return NEO_FWD(t);
     }
 };
@@ -82,18 +84,22 @@ public:
 namespace detail {
 
 template <typename T>
-constexpr auto view_if_string(const T& arg) noexcept {
-    return std::ref(arg);
+constexpr const T& view_if_string(const T& arg) noexcept {
+    return arg;
 }
 
 inline std::string_view view_if_string(const std::string& str) noexcept { return str; }
 
+template <typename Tup, std::size_t... Idx>
+constexpr auto view_strings_1(const Tup& tup, std::index_sequence<Idx...>) noexcept {
+    return std::tuple<decltype(view_if_string(std::get<Idx>(tup)))...>(
+        view_if_string(std::get<Idx>(tup))...);
+}
+
 /// Given a tuple, convert each std::string into a std::string_view
 template <typename... Ts>
 constexpr auto view_strings(const std::tuple<Ts...>& tup) noexcept {
-    return std::apply([](const auto&... args)  //
-                      { return std::make_tuple(view_if_string(NEO_FWD(args))...); },
-                      tup);
+    return view_strings_1(tup, std::index_sequence_for<Ts...>{});
 }
 
 template <typename Tuple, std::size_t... Is>
@@ -118,7 +124,7 @@ concept bindable_tuple
  * @brief Access to modify the bindings of a prepared statement.
  */
 class binding_access {
-    std::reference_wrapper<const statement> _owner;
+    statement* _owner;
 
 public:
 private:
@@ -132,9 +138,22 @@ private:
         (_assign_one(static_cast<int>(Is), std::get<Is>(tup)), ...);
     }
 
+    template <typename H, typename... Tail>
+    errable<void> bind_next(int idx, const H& h, const Tail&... tail) noexcept {
+        auto e = operator[](idx).bind(h);
+        if (e.is_error()) {
+            return e;
+        }
+        if constexpr (sizeof...(tail)) {
+            return bind_next(idx + 1, h, tail...);
+        } else {
+            return errc::ok;
+        }
+    }
+
 public:
-    binding_access(const statement& o)
-        : _owner(o) {}
+    binding_access(statement& o)
+        : _owner(&o) {}
 
     /**
      * @brief Access the binding at 1-based-index 'idx'
@@ -142,8 +161,8 @@ public:
      * @param idx The index of the binding (First binding is at '1', NOT zero)
      * @return binding
      */
-    [[nodiscard]] binding operator[](int idx) const noexcept { return binding{_owner, idx}; }
-    [[nodiscard]] binding operator[](const std::string& str) const noexcept {
+    [[nodiscard]] binding operator[](int idx) noexcept { return binding{*_owner, idx}; }
+    [[nodiscard]] binding operator[](const std::string& str) noexcept {
         return operator[](named_parameter_index(str));
     }
 
@@ -167,6 +186,15 @@ public:
     Tuple&& operator=(Tuple&& tup) {
         _assign_tup(tup, std::make_index_sequence<S>());
         return NEO_FWD(tup);
+    }
+
+    template <bindable... Ts>
+    errable<void> bind_all(const Ts&... ts) noexcept {
+        if constexpr (sizeof...(ts)) {
+            return bind_next(1, ts...);
+        } else {
+            return errc::ok;
+        }
     }
 };
 

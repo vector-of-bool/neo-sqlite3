@@ -19,7 +19,7 @@ recursive_transaction_guard::recursive_transaction_guard(database_ref db) {
 transaction_guard::transaction_guard(database_ref db)
     : _db(db.c_ptr()) {
     _n_uncaught_exceptions = std::uncaught_exceptions();
-    db.prepare("BEGIN").run_to_completion();
+    db.prepare("BEGIN")->run_to_completion().throw_if_error();
 }
 
 transaction_guard::~transaction_guard() noexcept(false) {
@@ -49,7 +49,7 @@ void transaction_guard::commit() {
     neo_assert_always(expects,
                       _db != nullptr,
                       "transaction_guard::commit() on ended (or dropped) transaction");
-    database_ref(_db).prepare("COMMIT").run_to_completion();
+    database_ref(_db).prepare("COMMIT")->run_to_completion().throw_if_error();
     drop();
 }
 
@@ -57,6 +57,6 @@ void transaction_guard::rollback() {
     neo_assert_always(expects,
                       _db != nullptr,
                       "transaction_guard::rollback() on an ended (or dropped) transaction");
-    database_ref(_db).prepare("ROLLBACK").run_to_completion();
+    database_ref(_db).prepare("ROLLBACK")->run_to_completion().throw_if_error();
     drop();
 }

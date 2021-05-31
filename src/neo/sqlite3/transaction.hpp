@@ -25,7 +25,7 @@ class database_ref;
  *       is in-progress. This is guarded with an assertion. For recursive
  *       transaction management, use recursive_transaction_guard.
  */
-class transaction_guard {
+class [[nodiscard]] transaction_guard {
     int        _n_uncaught_exceptions = 0;
     ::sqlite3* _db                    = nullptr;
 
@@ -65,7 +65,7 @@ public:
  * open on the database when this object is constructed, then this object's
  * method become no-ops.
  */
-class recursive_transaction_guard {
+class [[nodiscard]] recursive_transaction_guard {
     // We just wrap a transaction guard. This optional will only be engaged if
     // we are the top-level transaction.
     std::optional<transaction_guard> _inner;

@@ -2,6 +2,7 @@
 
 #include "./fwd.hpp"
 
+#include <concepts>
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -29,12 +30,17 @@ class value_ref {
     template <typename T>
     struct type_tag {};
 
-    auto _as(type_tag<int>) const noexcept { return as_integer(); }
-    auto _as(type_tag<unsigned>) const noexcept { return as_integer(); }
-    auto _as(type_tag<std::int64_t>) const noexcept { return as_integer(); }
+    template <std::integral I>
+    I _as(type_tag<I>) const noexcept {
+        return static_cast<I>(as_integer());
+    }
 
-    auto _as(type_tag<float>) const noexcept { return as_real(); }
-    auto _as(type_tag<double>) const noexcept { return as_real(); }
+    template <std::floating_point F>
+    F _as(type_tag<F>) const noexcept {
+        return static_cast<F>(as_real());
+    }
+
+    bool _as(type_tag<bool>) const noexcept { return as_integer() != 0; }
 
     template <typename Char, typename Traits, typename Allocator>
     auto _as(type_tag<std::basic_string<Char, Traits, Allocator>>) const noexcept {
