@@ -97,3 +97,43 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Access column information") {
     CHECK(st.columns()[0].table_name() == "people");
     CHECK(st.columns()[1].table_name() == "pets");
 }
+
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Auto-reset") {
+    db.exec("CREATE TABLE people (name, age, job)").throw_if_error();
+    db.exec("INSERT INTO people VALUES ('joe', 44, 'teacher'), ('jane', 34, 'engineer')")
+        .throw_if_error();
+    auto st = *db.prepare("SELECT * FROM people");
+    CHECK_FALSE(st.is_busy());
+    {
+        neo::sqlite3::auto_reset rst{st};
+        CHECK_FALSE(st.is_busy());
+    }
+    CHECK_FALSE(st.is_busy());
+    {
+        auto rst = st.auto_reset();
+        CHECK_FALSE(st.is_busy());
+        st.step().throw_if_error();
+        CHECK(st.is_busy());
+    }
+    CHECK_FALSE(st.is_busy());
+    {
+        auto rst = st.auto_reset();
+        st.step().throw_if_error();
+        st.step().throw_if_error();
+        st.step().throw_if_error();
+        CHECK_FALSE(st.is_busy());
+    }
+    {
+        neo::sqlite3::auto_reset outter;
+        {
+            st.step().throw_if_error();
+            CHECK(st.is_busy());
+            auto rst = st.auto_reset();
+            CHECK(st.is_busy());
+            outter = std::move(rst);
+            CHECK(st.is_busy());
+        }
+        CHECK(st.is_busy());
+    }
+    CHECK_FALSE(st.is_busy());
+}

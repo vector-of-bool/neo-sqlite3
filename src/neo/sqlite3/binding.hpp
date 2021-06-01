@@ -145,7 +145,7 @@ private:
             return e;
         }
         if constexpr (sizeof...(tail)) {
-            return bind_next(idx + 1, h, tail...);
+            return bind_next(idx + 1, tail...);
         } else {
             return errc::ok;
         }

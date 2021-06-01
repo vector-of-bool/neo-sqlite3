@@ -39,8 +39,7 @@ errable<statement> database_ref::prepare(string_view query) noexcept {
 }
 
 errable<void> database_ref::exec(const std::string& code) {
-    char* errmsg = nullptr;
-    auto  rc     = errc{::sqlite3_exec(c_ptr(), code.data(), nullptr, nullptr, &errmsg)};
+    auto rc = errc{::sqlite3_exec(c_ptr(), code.data(), nullptr, nullptr, nullptr)};
     return {rc, "::sqlite3_exec() failed", *this};
 }
 

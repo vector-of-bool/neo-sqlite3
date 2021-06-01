@@ -1,7 +1,7 @@
 #include "./exec.hpp"
 
 #include <neo/sqlite3/iter_tuples.hpp>
-#include <neo/sqlite3/next.hpp>
+#include <neo/sqlite3/exec.hpp>
 #include <neo/sqlite3/statement_cache.hpp>
 
 #include "./tests.inl"
@@ -17,6 +17,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute some queries") {
     CHECK(it->get<0>() == 4);
     ++it;
     CHECK(it->get<0>() == 57);
+    ++it;
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Execute with a cache") {
@@ -101,4 +102,16 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture,
     auto st     = *db.prepare("SELECT * FROM foo");
     auto [name] = *neo::sqlite3::unpack_next<std::string>(st);
     CHECK(name == "Joey");
+}
+
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Pull the next result") {
+    db.prepare("CREATE TABLE foo AS VALUES (1, 2, 3)")->run_to_completion().throw_if_error();
+    auto st           = *db.prepare("SELECT * FROM foo");
+    auto [i1, i2, i3] = *neo::sqlite3::unpack_next<int, int, int>(st);
+    CHECK(i1 == 1);
+    CHECK(i2 == 2);
+    CHECK(i3 == 3);
+    CHECK(st.is_busy());  // Still waiting
+    CHECK_THROWS_AS(*neo::sqlite3::unpack_next<int>(st),
+                    neo::sqlite3::errc_error<neo::sqlite3::errc::done>);
 }

@@ -63,7 +63,7 @@ template <bindable... Ts>
  * @return A range of tuples corresponding to the values in the rows
  */
 template <typename... OutTypes, bindable... Ts>
-[[nodiscard]] errable<iter_tuples<OutTypes...>> exec_tuples(statement& st, Ts&... bindings) {
+[[nodiscard]] errable<iter_tuples<OutTypes...>> exec_tuples(statement& st, const Ts&... bindings) {
     auto e = reset_and_bind(st, bindings...);
     if (e.is_error()) {
         return e.errc();
@@ -93,6 +93,28 @@ requires bindable_tuple<ranges::range_value_t<TuplesRange>>  //
         }
     }
     return errc::done;
+}
+
+namespace detail {
+
+errable<void> run_step(statement& st) noexcept;
+
+}  // namespace detail
+
+/**
+ * @brief Obtain the next result from the statement as a tuple.
+ *
+ * @tparam Ts Element types of the result row
+ * @param st The statement to execute
+ * @return typed_row<Ts...> The statement result.
+ */
+template <typename... Ts>
+[[nodiscard]] errable<typed_row<Ts...>> unpack_next(statement& st) {
+    auto e = detail::run_step(st);
+    if (e != errc::row) {
+        return e.errc();
+    }
+    return typed_row<Ts...>{st};
 }
 
 }  // namespace neo::sqlite3

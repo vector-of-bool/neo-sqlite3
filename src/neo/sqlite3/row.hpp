@@ -85,3 +85,13 @@ public:
 };
 
 }  // namespace neo::sqlite3
+
+template <typename... Ts>
+struct std::tuple_size<neo::sqlite3::typed_row<Ts...>> {
+    constexpr static std::size_t value = sizeof...(Ts);
+};
+
+template <std::size_t I, typename... Ts>
+struct std::tuple_element<I, neo::sqlite3::typed_row<Ts...>> {
+    using type = neo::sqlite3::typed_row<Ts...>::template nth_type<I>;
+};
