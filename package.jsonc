@@ -4,7 +4,7 @@
     "namespace": "neo",
     "test_driver": "Catch-Main",
     "depends": [
-        "neo-fun^0.7.0",
+        "neo-fun^0.8.1",
         "sqlite3^3.18.1"
     ]
 }

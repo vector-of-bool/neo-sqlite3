@@ -3,6 +3,9 @@
     "cxx_compiler": "g++-10",
     "cxx_version": "c++20",
     "warning_flags": "-Werror",
+    "cxx_flags": [
+        "-fconcepts-diagnostics-depth=5"
+    ],
     "debug": true,
     "optimize": false
 }
