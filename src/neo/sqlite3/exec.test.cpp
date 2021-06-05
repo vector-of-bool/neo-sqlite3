@@ -1,7 +1,7 @@
 #include "./exec.hpp"
 
-#include <neo/sqlite3/iter_tuples.hpp>
 #include <neo/sqlite3/exec.hpp>
+#include <neo/sqlite3/iter_tuples.hpp>
 #include <neo/sqlite3/statement_cache.hpp>
 
 #include "./tests.inl"
@@ -91,7 +91,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "exec with a range of tuples as bind
     CHECK((db.total_changes() - before) == 3);
 
     auto st    = *db.prepare("SELECT sum(age) FROM foo");
-    auto [sum] = neo::sqlite3::unpack_next<int>(st)->as_tuple();
+    auto [sum] = neo::sqlite3::next<int>(st)->as_tuple();
     CHECK(sum == (24 + 18 + 99));
 }
 
@@ -100,18 +100,18 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture,
     db.exec("CREATE TABLE foo(name)").throw_if_error();
     neo::sqlite3::exec(*db.prepare("INSERT INTO foo VALUES (?)"), "Joey").throw_if_error();
     auto st     = *db.prepare("SELECT * FROM foo");
-    auto [name] = *neo::sqlite3::unpack_next<std::string>(st);
+    auto [name] = *neo::sqlite3::next<std::string>(st);
     CHECK(name == "Joey");
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Pull the next result") {
     db.prepare("CREATE TABLE foo AS VALUES (1, 2, 3)")->run_to_completion().throw_if_error();
     auto st           = *db.prepare("SELECT * FROM foo");
-    auto [i1, i2, i3] = *neo::sqlite3::unpack_next<int, int, int>(st);
+    auto [i1, i2, i3] = *neo::sqlite3::next<int, int, int>(st);
     CHECK(i1 == 1);
     CHECK(i2 == 2);
     CHECK(i3 == 3);
     CHECK(st.is_busy());  // Still waiting
-    CHECK_THROWS_AS(*neo::sqlite3::unpack_next<int>(st),
+    CHECK_THROWS_AS(*neo::sqlite3::next<int>(st),
                     neo::sqlite3::errc_error<neo::sqlite3::errc::done>);
 }
