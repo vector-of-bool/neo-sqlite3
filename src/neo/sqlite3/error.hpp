@@ -274,6 +274,24 @@ using constraint_foreign_key_error = errc_error<errc::constraint_foreign_key>;
 /// Convenience alias for errc_error representing a CHECK constraint violation
 using constraint_check_error = errc_error<errc::constraint_check>;
 
+constexpr void do_repr(auto out, const errcond* ec) noexcept {
+    out.type("neo::sqlite3::errcond");
+    if (ec) {
+        out.append("{value={}, message={}}",
+                   int(*ec),
+                   out.repr_value(make_error_condition(*ec).message()));
+    }
+}
+
+constexpr void do_repr(auto out, const errc* ec) noexcept {
+    out.type("neo::sqlite3::errc");
+    if (ec) {
+        out.append("{value={}, message={}}",
+                   int(*ec),
+                   out.repr_value(make_error_code(*ec).message()));
+    }
+}
+
 }  // namespace neo::sqlite3
 
 template <>

@@ -57,3 +57,9 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Count changes") {
     CHECK(db.changes() == 1);
     CHECK(db.total_changes() == 5);
 }
+
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Attach another database") {
+    db.attach("new_temp", ":memory:").throw_if_error();
+    db.exec("CREATE TABLE new_temp.foo (name TEXT)").throw_if_error();
+    db.detach("new_temp").throw_if_error();
+}

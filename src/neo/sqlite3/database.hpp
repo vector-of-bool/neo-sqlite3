@@ -19,6 +19,52 @@ class statement;
 
 enum class fn_flags;
 
+namespace event {
+
+struct open_before {
+    std::string_view filename;
+};
+
+struct open_error {
+    std::string_view filename;
+    errc             ec;
+};
+
+struct open_after {
+    std::string_view filename;
+    database_ref&    db;
+};
+
+struct prepare_before {
+    database_ref&    db;
+    std::string_view code;
+};
+
+struct prepare_after {
+    database_ref&    db;
+    std::string_view code;
+    statement&       stmt;
+};
+
+struct prepare_error {
+    database_ref&    db;
+    std::string_view code;
+    errc             ec;
+};
+
+struct exec_before {
+    database_ref&    db;
+    std::string_view code;
+};
+
+struct exec_after {
+    database_ref&    db;
+    std::string_view code;
+    errc             ec;
+};
+
+}  // namespace event
+
 /**
  * @brief A non-owning reference to a database connection.
  */
@@ -94,6 +140,29 @@ public:
      */
     [[nodiscard]] std::string_view error_message() const noexcept;
 
+    /**
+     * @brief Determine whether the database has been opened as read-only
+     */
+    [[nodiscard]] bool is_readonly() const noexcept { return is_readonly("main"); }
+
+    /**
+     * @brief Determine whether the named database has been opened as read-only
+     */
+    [[nodiscard]] bool is_readonly(const std::string& name) const noexcept;
+
+    /**
+     * @brief Obtain the filename that was used to open this database
+     */
+    [[nodiscard]] std::string_view filename() const noexcept { return filename("main"); }
+
+    /**
+     * @brief Obtain the filename that was used to open the database of the given name
+     */
+    [[nodiscard]] std::string_view filename(const std::string&) const noexcept;
+
+    errable<void> attach(std::string_view db_name, std::string_view db_filename_or_uri) noexcept;
+    errable<void> detach(std::string_view db_name) noexcept;
+
     // To use: #include <neo/sqlite3/function.hpp>
     template <typename Func>
     void register_function(const std::string& name, Func&& fn);
@@ -106,6 +175,24 @@ public:
      * This function is safe to call from any thread.
      */
     void interrupt() noexcept;
+
+    friend constexpr void do_repr(auto out, const database_ref* self) noexcept {
+        out.type("neo::sqlite3::database");
+        if (self) {
+            out.bracket_value(
+                "{}, filename={}, changes={}, total_changes={}, "
+                "is_transaction_active={}, last_insert_rowid={}, "
+                "readonly={}, error_message={}",
+                out.repr_value(self->c_ptr()),
+                out.repr_value(self->filename()),
+                self->changes(),
+                self->total_changes(),
+                self->is_transaction_active(),
+                self->last_insert_rowid(),
+                self->is_readonly(),
+                out.repr_value(self->error_message()));
+        }
+    }
 };
 
 /**

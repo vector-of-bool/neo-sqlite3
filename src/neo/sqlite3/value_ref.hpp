@@ -81,6 +81,15 @@ public:
     [[nodiscard]] T as() const noexcept {
         return static_cast<T>(_as(type_tag<T>()));
     }
+
+    std::string value_repr_string() const noexcept;
+
+    friend constexpr void do_repr(auto out, const value_ref* self) noexcept {
+        out.type("neo::sqlite3::value_ref");
+        if (self) {
+            out.append("{}", self->value_repr_string());
+        }
+    }
 };
 
 }  // namespace neo::sqlite3

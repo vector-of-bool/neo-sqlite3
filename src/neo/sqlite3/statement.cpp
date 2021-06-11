@@ -2,8 +2,10 @@
 
 #include "./database.hpp"
 #include "./errable.hpp"
+#include "./error.hpp"
 
-#include <neo/sqlite3/error.hpp>
+#include <neo/event.hpp>
+#include <neo/scope.hpp>
 
 #include <sqlite3/sqlite3.h>
 
@@ -28,6 +30,9 @@ errable<void> statement::run_to_completion() noexcept {
 }
 
 errable<void> statement::step() noexcept {
+    if (neo::get_event_subscriber<event::step_first>() && !is_busy()) {
+        neo::emit(event::step_first{*this});
+    }
     auto result = ::sqlite3_step(c_ptr());
     neo_assert_always(expects,
                       result != SQLITE_MISUSE,
@@ -35,12 +40,24 @@ errable<void> statement::step() noexcept {
                       "statement while it is in an invalid state to do so. This is an issue in the "
                       "application or library, and it is not the fault of SQLite or of any user "
                       "action. We cannot safely continue, so the program will now be terminated.");
+    neo::emit(event::step{*this, errc{result}});
     return errc{result};
 }
 
 bool statement::is_busy() const noexcept { return ::sqlite3_stmt_busy(_stmt_ptr) != 0; }
 
 database_ref statement::database() noexcept { return database_ref(::sqlite3_db_handle(c_ptr())); }
+
+std::string_view statement::sql_string() const noexcept {
+    auto ptr = ::sqlite3_sql(c_ptr());
+    return ptr;
+}
+
+std::string statement::expanded_sql_string() const noexcept {
+    auto ptr = ::sqlite3_expanded_sql(c_ptr());
+    neo_defer { ::sqlite3_free(ptr); };
+    return std::string(ptr);
+}
 
 #define OWNER_STMT_PTR (_owner->c_ptr())
 

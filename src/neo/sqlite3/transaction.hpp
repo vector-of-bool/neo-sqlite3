@@ -9,6 +9,22 @@ namespace neo::sqlite3 {
 
 class database_ref;
 
+namespace event {
+
+struct transaction_guard_begin {
+    database_ref& db;
+};
+
+struct transaction_guard_rollback {
+    database_ref& db;
+};
+
+struct transaction_guard_commit {
+    database_ref& db;
+};
+
+}  // namespace event
+
 /**
  * @brief Scope-guard for database transactions.
  *

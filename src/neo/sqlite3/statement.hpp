@@ -23,6 +23,23 @@ template <typename... Ts>
 class typed_row;
 class auto_reset;
 
+namespace event {
+
+struct step_first {
+    statement& st;
+};
+
+struct step {
+    statement& st;
+    errc       ec;
+};
+
+struct reset {
+    statement& st;
+};
+
+}  // namespace event
+
 /**
  * @brief Access the metadata of a statement's result columns
  *
@@ -171,6 +188,20 @@ public:
     [[nodiscard]] database_ref database() noexcept;
 
     [[nodiscard]] inline class auto_reset auto_reset() noexcept;
+
+    [[nodiscard]] std::string_view sql_string() const noexcept;
+    [[nodiscard]] std::string      expanded_sql_string() const noexcept;
+
+    constexpr friend void do_repr(auto out, const statement* st) noexcept {
+        out.type("neo::sqlite3::statement");
+        if (st) {
+            out.bracket_value("{}, code={}, expanded={}, current_row={}",
+                              out.repr_value(st->c_ptr()),
+                              out.repr_value(st->sql_string()),
+                              out.repr_value(st->expanded_sql_string()),
+                              out.repr_value(st->row()));
+        }
+    }
 };
 
 /**

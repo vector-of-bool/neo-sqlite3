@@ -8,7 +8,7 @@
 using namespace neo::sqlite3;
 
 value_ref row_access::operator[](int idx) const noexcept {
-    auto col_count = ::sqlite3_column_count(_owner->c_ptr());
+    auto col_count = column_count();
     neo_assert(expects,
                _owner->is_busy(),
                "Attempted to access value from a row in an idle statement. Either `step()` was "
@@ -18,3 +18,5 @@ value_ref row_access::operator[](int idx) const noexcept {
     auto val = ::sqlite3_column_value(_owner->c_ptr(), idx);
     return value_ref(val);
 }
+
+int row_access::column_count() const noexcept { return ::sqlite3_column_count(_owner->c_ptr()); }

@@ -56,6 +56,23 @@ public:
     [[nodiscard]] typed_row<Ts...> unpack() const {
         return typed_row<Ts...>{*_owner};
     }
+
+    [[nodiscard]] int column_count() const noexcept;
+
+    friend constexpr void do_repr(auto out, row_access const* self) noexcept {
+        out.type("neo::sqlite3::row_access");
+        if (self) {
+            out.append("{");
+            auto n_cols = self->column_count();
+            for (auto i = 0; i < n_cols; ++i) {
+                out.append("[{}]={}", i, out.repr_value((*self)[i]));
+                if (i + 1 < n_cols) {
+                    out.append(", ");
+                }
+            }
+            out.append("}");
+        }
+    }
 };
 
 template <typename... Ts>

@@ -1,6 +1,7 @@
 #include "./value_ref.hpp"
 
 #include <neo/assert.hpp>
+#include <neo/ufmt.hpp>
 #include <sqlite3/sqlite3.h>
 
 using namespace neo::sqlite3;
@@ -30,4 +31,23 @@ double       value_ref::as_real() const noexcept { return ::sqlite3_value_double
 std::string_view value_ref::as_text() const noexcept {
     auto ptr = reinterpret_cast<const char*>(::sqlite3_value_text(MY_VALUE_PTR));
     return ptr;
+}
+
+std::string value_ref::value_repr_string() const noexcept {
+    using vt = value_type;
+    switch (type()) {
+    case vt::integer:
+        return neo::ufmt("{}", as_integer());
+    case vt::real:
+        return std::to_string(as_real());
+    case vt::blob:
+        return "blob[...]";
+    case vt::null:
+        return "null";
+    case vt::pointer:
+        return "pointer";
+    case vt::text:
+        return neo::ufmt("\"{}\"s", as_text());
+    }
+    neo::unreachable();
 }
