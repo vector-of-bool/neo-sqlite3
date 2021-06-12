@@ -5,6 +5,8 @@
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Run a simple statement") {
     auto st = *db.prepare("CREATE TABLE mine(name, age)");
     CHECK(st.step() == neo::sqlite3::statement::done);
+    // We can recover the original string:
+    CHECK(st.sql_string() == "CREATE TABLE mine(name, age)");
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Obtain a single value") {
@@ -59,6 +61,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Numeric bind") {
     CHECK(st.step() == neo::sqlite3::statement::more);
     CHECK(st.row()[0].as_integer() == 42);
     CHECK(st.row()[1].as_text() == "cat");
+    CHECK(st.expanded_sql_string() == "VALUES (42, 'cat')");
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Named bind") {

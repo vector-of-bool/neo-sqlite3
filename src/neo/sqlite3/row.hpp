@@ -25,7 +25,7 @@ class statement;
 class value_ref;
 
 /**
- * @brief A database result row that has associated types at compile-time.
+ * @brief A result row that has associated types at compile-time.
  *
  * @tparam Ts The types of the fields of the row
  */
@@ -55,6 +55,23 @@ public:
     template <typename... Ts>
     [[nodiscard]] typed_row<Ts...> unpack() const {
         return typed_row<Ts...>{*_owner};
+    }
+
+    [[nodiscard]] int column_count() const noexcept;
+
+    friend constexpr void do_repr(auto out, row_access const* self) noexcept {
+        out.type("neo::sqlite3::row_access");
+        if (self) {
+            out.append("{");
+            auto n_cols = self->column_count();
+            for (auto i = 0; i < n_cols; ++i) {
+                out.append("[{}]={}", i, out.repr_value((*self)[i]));
+                if (i + 1 < n_cols) {
+                    out.append(", ");
+                }
+            }
+            out.append("}");
+        }
     }
 };
 

@@ -17,11 +17,28 @@ struct sqlite3;
 namespace neo::sqlite3 {
 
 class statement;
-class database_ref;
+class connection_ref;
 class statement;
 template <typename... Ts>
 class typed_row;
 class auto_reset;
+
+namespace event {
+
+struct step_first {
+    statement& st;
+};
+
+struct step {
+    statement& st;
+    errc       ec;
+};
+
+struct reset {
+    statement& st;
+};
+
+}  // namespace event
 
 /**
  * @brief Access the metadata of a statement's result columns
@@ -35,7 +52,7 @@ public:
     /**
      * @brief Access the column metadata for 'st' at index 'idx' (zero-based)
      *
-     * @param st The database statement to inspect
+     * @param st The statement to inspect
      * @param idx The index of the column to access (zero-based)
      */
     column(const statement& st, int idx)
@@ -89,7 +106,7 @@ public:
 class row_access;
 
 /**
- * @brief A prepared statement returns by database{_ref}::prepare
+ * @brief A prepared statement returns by connection{_ref}::prepare
  *
  * When the object is destroyed, the statement will be freed.
  */
@@ -167,10 +184,28 @@ public:
      */
     [[nodiscard]] auto columns() noexcept { return column_access{*this}; }
 
-    /// Get a reference to the database associated with this statement
-    [[nodiscard]] database_ref database() noexcept;
+    /// Get a reference to the connection associated with this statement
+    [[nodiscard]] connection_ref connection() noexcept;
+
+    [[nodiscard, deprecated("Use the connection() method instead.")]]  //
+    connection_ref
+    database() noexcept;
 
     [[nodiscard]] inline class auto_reset auto_reset() noexcept;
+
+    [[nodiscard]] std::string_view sql_string() const noexcept;
+    [[nodiscard]] std::string      expanded_sql_string() const noexcept;
+
+    constexpr friend void do_repr(auto out, const statement* st) noexcept {
+        out.type("neo::sqlite3::statement");
+        if (st) {
+            out.bracket_value("{}, code={}, expanded={}, current_row={}",
+                              out.repr_value(st->c_ptr()),
+                              out.repr_value(st->sql_string()),
+                              out.repr_value(st->expanded_sql_string()),
+                              out.repr_value(st->row()));
+        }
+    }
 };
 
 /**

@@ -20,8 +20,8 @@ enum class fn_flags;
 class blob;
 class statement;
 
-class database;
-class database_ref;
+class connection;
+class connection_ref;
 
 enum class errcond;
 enum class errc;
@@ -33,5 +33,12 @@ struct errcond_error;
 
 template <errc Code>
 struct errc_error;
+
+using database [[deprecated("neo::sqlite3::database has been renamed to neo::sqlite3::connection")]]
+= connection;
+
+using database_ref
+    [[deprecated("neo::sqlite3::database_ref has been renamed to neo::sqlite3::connection_ref")]]
+    = connection_ref;
 
 }  // namespace neo::sqlite3

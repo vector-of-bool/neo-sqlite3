@@ -1,6 +1,6 @@
 #include "./error.hpp"
 
-#include "./database.hpp"
+#include "./connection.hpp"
 
 #include <neo/assert.hpp>
 #include <neo/ufmt.hpp>
@@ -39,7 +39,7 @@ const std::error_category& neo::sqlite3::error_category() noexcept {
 
 void neo::sqlite3::throw_error(const std::error_code& ec,
                                std::string_view       message,
-                               const database_ref&    db) {
+                               const connection_ref&  db) {
     throw_error(ec, message, db.error_message());
 }
 

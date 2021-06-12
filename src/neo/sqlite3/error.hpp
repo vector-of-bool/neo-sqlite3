@@ -6,7 +6,7 @@
 
 namespace neo::sqlite3 {
 
-class database_ref;
+class connection_ref;
 
 /// Obtain an instance of the SQLite error category.
 [[nodiscard]] const std::error_category& error_category() noexcept;
@@ -239,7 +239,7 @@ struct errc_error : errcond_error<error_code_condition(Code)> {
 [[noreturn]] void
 throw_error(const std::error_code& ec, std::string_view message, std::string_view sup);
 [[noreturn]] void
-throw_error(const std::error_code& ec, std::string_view message, const database_ref& db);
+throw_error(const std::error_code& ec, std::string_view message, const connection_ref& db);
 
 /**
  * @brief Conditionally throw an exception with 'throw_error'
@@ -254,7 +254,7 @@ throw_if_error(const std::error_code& ec, std::string_view message, std::string_
 }
 
 inline void
-throw_if_error(const std::error_code& ec, std::string_view message, const database_ref& db) {
+throw_if_error(const std::error_code& ec, std::string_view message, const connection_ref& db) {
     if (ec) {
         throw_error(ec, message, db);
     }
@@ -273,6 +273,24 @@ using constraint_not_null_error = errc_error<errc::constraint_not_null>;
 using constraint_foreign_key_error = errc_error<errc::constraint_foreign_key>;
 /// Convenience alias for errc_error representing a CHECK constraint violation
 using constraint_check_error = errc_error<errc::constraint_check>;
+
+constexpr void do_repr(auto out, const errcond* ec) noexcept {
+    out.type("neo::sqlite3::errcond");
+    if (ec) {
+        out.append("{value={}, message={}}",
+                   int(*ec),
+                   out.repr_value(make_error_condition(*ec).message()));
+    }
+}
+
+constexpr void do_repr(auto out, const errc* ec) noexcept {
+    out.type("neo::sqlite3::errc");
+    if (ec) {
+        out.append("{value={}, message={}}",
+                   int(*ec),
+                   out.repr_value(make_error_code(*ec).message()));
+    }
+}
 
 }  // namespace neo::sqlite3
 

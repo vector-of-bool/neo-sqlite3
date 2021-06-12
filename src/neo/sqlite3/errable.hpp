@@ -11,7 +11,7 @@ struct sqlite3;
 
 namespace neo::sqlite3 {
 
-class database_ref;
+class connection_ref;
 
 /**
  * @brief A product type that represents either a value of `T` or a SQLite error.
@@ -27,8 +27,8 @@ class errable_base {
 public:
     constexpr errable_base(enum errc rc) noexcept
         : _rc(rc) {}
-    errable_base(enum errc rc, const database_ref& db) noexcept;
-    errable_base(enum errc rc, const char* context, const database_ref& db) noexcept;
+    errable_base(enum errc rc, const connection_ref& db) noexcept;
+    errable_base(enum errc rc, const char* context, const connection_ref& db) noexcept;
     constexpr errable_base(enum errc rc, const char* context) noexcept
         : _rc(rc)
         , _context{context} {}
