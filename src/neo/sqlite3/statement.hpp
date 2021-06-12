@@ -17,7 +17,7 @@ struct sqlite3;
 namespace neo::sqlite3 {
 
 class statement;
-class database_ref;
+class connection_ref;
 class statement;
 template <typename... Ts>
 class typed_row;
@@ -52,7 +52,7 @@ public:
     /**
      * @brief Access the column metadata for 'st' at index 'idx' (zero-based)
      *
-     * @param st The database statement to inspect
+     * @param st The statement to inspect
      * @param idx The index of the column to access (zero-based)
      */
     column(const statement& st, int idx)
@@ -106,7 +106,7 @@ public:
 class row_access;
 
 /**
- * @brief A prepared statement returns by database{_ref}::prepare
+ * @brief A prepared statement returns by connection{_ref}::prepare
  *
  * When the object is destroyed, the statement will be freed.
  */
@@ -184,8 +184,12 @@ public:
      */
     [[nodiscard]] auto columns() noexcept { return column_access{*this}; }
 
-    /// Get a reference to the database associated with this statement
-    [[nodiscard]] database_ref database() noexcept;
+    /// Get a reference to the connection associated with this statement
+    [[nodiscard]] connection_ref connection() noexcept;
+
+    [[nodiscard, deprecated("Use the connection() method instead.")]]  //
+    connection_ref
+    database() noexcept;
 
     [[nodiscard]] inline class auto_reset auto_reset() noexcept;
 

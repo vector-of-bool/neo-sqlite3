@@ -2,7 +2,7 @@
 
 #include "./error.hpp"
 
-#include "./database.hpp"
+#include "./connection.hpp"
 
 #include <sqlite3/sqlite3.h>
 
@@ -16,11 +16,11 @@ void errable_base::throw_error() const {
                     _dbptr ? ::sqlite3_errmsg(_dbptr) : "");
 }
 
-errable_base::errable_base(enum errc rc, const database_ref& db) noexcept
+errable_base::errable_base(enum errc rc, const connection_ref& db) noexcept
     : _rc{rc}
     , _dbptr{db.c_ptr()} {}
 
-errable_base::errable_base(enum errc rc, const char* context, const database_ref& db) noexcept
+errable_base::errable_base(enum errc rc, const char* context, const connection_ref& db) noexcept
     : _rc{rc}
     , _context{context}
     , _dbptr{db.c_ptr()} {}

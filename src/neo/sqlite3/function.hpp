@@ -1,6 +1,6 @@
 #pragma once
 
-#include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/connection.hpp>
 #include <neo/sqlite3/value_ref.hpp>
 
 #include <neo/assert.hpp>
@@ -135,12 +135,12 @@ enum class fn_flags {
 NEO_DECL_ENUM_BITOPS(fn_flags);
 
 template <typename Func>
-void database_ref::register_function(const std::string& name, Func&& fn) {
+void connection_ref::register_function(const std::string& name, Func&& fn) {
     register_function(name, fn_flags::none, NEO_FWD(fn));
 }
 
 template <typename Func>
-void database_ref::register_function(const std::string& name, fn_flags flags, Func&& fn) {
+void connection_ref::register_function(const std::string& name, fn_flags flags, Func&& fn) {
     using argtypes = typename detail::infer_argtypes<Func>::type;
     static_assert(!std::is_void_v<argtypes>,
                   "Unable to infer the argument types of the function object. Did you pass a "

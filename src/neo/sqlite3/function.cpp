@@ -1,6 +1,6 @@
 #include "./function.hpp"
 
-#include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/connection.hpp>
 #include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/value_ref.hpp>
 
@@ -89,7 +89,7 @@ void detail::register_function(::sqlite3*                               db_,
     if (ec) {
         throw_error(ec,
                     ufmt("Error while creating a scalar function '{}'", name),
-                    database_ref(db));
+                    connection_ref(db));
     }
     // Our shared_ptr is now in the care of SQLite. It will call our destroy
     // callback when needed.

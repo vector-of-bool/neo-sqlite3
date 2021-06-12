@@ -25,7 +25,7 @@ class statement;
 class value_ref;
 
 /**
- * @brief A database result row that has associated types at compile-time.
+ * @brief A result row that has associated types at compile-time.
  *
  * @tparam Ts The types of the fields of the row
  */

@@ -1,6 +1,6 @@
 #include "./statement.hpp"
 
-#include "./database.hpp"
+#include "./connection.hpp"
 #include "./errable.hpp"
 #include "./error.hpp"
 
@@ -46,7 +46,13 @@ errable<void> statement::step() noexcept {
 
 bool statement::is_busy() const noexcept { return ::sqlite3_stmt_busy(_stmt_ptr) != 0; }
 
-database_ref statement::database() noexcept { return database_ref(::sqlite3_db_handle(c_ptr())); }
+connection_ref statement::connection() noexcept {
+    return connection_ref(::sqlite3_db_handle(c_ptr()));
+}
+
+connection_ref statement::database() noexcept {
+    return connection_ref(::sqlite3_db_handle(c_ptr()));
+}
 
 std::string_view statement::sql_string() const noexcept {
     auto ptr = ::sqlite3_sql(c_ptr());

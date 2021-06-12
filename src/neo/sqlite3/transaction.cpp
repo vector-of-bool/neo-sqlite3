@@ -1,6 +1,6 @@
 #include "./transaction.hpp"
 
-#include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/connection.hpp>
 #include <neo/sqlite3/statement.hpp>
 
 #include <neo/event.hpp>
@@ -10,7 +10,7 @@
 
 using namespace neo::sqlite3;
 
-recursive_transaction_guard::recursive_transaction_guard(database_ref db) {
+recursive_transaction_guard::recursive_transaction_guard(connection_ref db) {
     if (!db.is_transaction_active()) {
         // There is no active transaction, so we are the top-most transaction
         // guard. Create an inner transaction guard to track the transaction
@@ -18,7 +18,7 @@ recursive_transaction_guard::recursive_transaction_guard(database_ref db) {
     }
 }
 
-transaction_guard::transaction_guard(database_ref db)
+transaction_guard::transaction_guard(connection_ref db)
     : _db(db.c_ptr()) {
     _n_uncaught_exceptions = std::uncaught_exceptions();
     neo::emit(event::transaction_guard_begin{db});
@@ -52,7 +52,7 @@ void transaction_guard::commit() {
     neo_assert_always(expects,
                       _db != nullptr,
                       "transaction_guard::commit() on ended (or dropped) transaction");
-    database_ref db{_db};
+    connection_ref db{_db};
     neo::emit(event::transaction_guard_commit{db});
     db.prepare("COMMIT")->run_to_completion().throw_if_error();
     drop();
@@ -62,7 +62,7 @@ void transaction_guard::rollback() {
     neo_assert_always(expects,
                       _db != nullptr,
                       "transaction_guard::rollback() on an ended (or dropped) transaction");
-    database_ref db{_db};
+    connection_ref db{_db};
     neo::emit(event::transaction_guard_rollback{db});
     db.prepare("ROLLBACK")->run_to_completion().throw_if_error();
     drop();

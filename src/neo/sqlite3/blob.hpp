@@ -4,10 +4,10 @@
 
 namespace neo::sqlite3 {
 
-class database;
+class connection;
 
 class blob {
-    friend class database_ref;
+    friend class connection_ref;
 
     void* _ptr = nullptr;
 

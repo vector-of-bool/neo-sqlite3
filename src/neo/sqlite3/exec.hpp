@@ -11,7 +11,7 @@
 namespace neo::sqlite3 {
 
 /**
- * @brief Reset the given database statement and bind each given argument
+ * @brief Reset the given statement and bind each given argument
  */
 template <bindable... Args>
 errable<void> reset_and_bind(statement& st, const Args&... bindings) noexcept {

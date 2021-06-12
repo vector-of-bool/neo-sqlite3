@@ -1,6 +1,6 @@
 #include "./binding.hpp"
 
-#include "./database.hpp"
+#include "./connection.hpp"
 #include "./statement.hpp"
 
 #include <neo/sqlite3/error.hpp>
@@ -14,7 +14,7 @@ using namespace neo::sqlite3;
 errable<void> binding::bind_double(double d) {
     auto rc = errc{::sqlite3_bind_double(OWNER_STMT_PTR, _index, d)};
     if (is_error_rc(rc)) {
-        return {rc, "sqlite3_bind_double() failed", _owner->database()};
+        return {rc, "sqlite3_bind_double() failed", _owner->connection()};
     }
     return rc;
 }
@@ -22,7 +22,7 @@ errable<void> binding::bind_double(double d) {
 errable<void> binding::bind_i64(std::int64_t i) {
     auto rc = errc{::sqlite3_bind_int64(OWNER_STMT_PTR, _index, i)};
     if (is_error_rc(rc)) {
-        return {rc, "sqlite3_bind_int64() failed", _owner->database()};
+        return {rc, "sqlite3_bind_int64() failed", _owner->connection()};
     }
     return rc;
 }
@@ -35,7 +35,7 @@ errable<void> binding::bind_str_copy(std::string_view str) {
                                          SQLITE_TRANSIENT,
                                          SQLITE_UTF8)};
     if (is_error_rc(rc)) {
-        return {rc, "sqlite3_bind_text64() failed", _owner->database()};
+        return {rc, "sqlite3_bind_text64() failed", _owner->connection()};
     }
     return rc;
 }
@@ -48,7 +48,7 @@ errable<void> binding::bind_str_nocopy(std::string_view str) {
                                          nullptr,
                                          SQLITE_UTF8)};
     if (is_error_rc(rc)) {
-        return {rc, "sqlite3_bind_text64() failed", _owner->database()};
+        return {rc, "sqlite3_bind_text64() failed", _owner->connection()};
     }
     return rc;
 }
@@ -56,7 +56,7 @@ errable<void> binding::bind_str_nocopy(std::string_view str) {
 errable<void> binding::bind_null() {
     auto rc = errc{::sqlite3_bind_null(OWNER_STMT_PTR, _index)};
     if (is_error_rc(rc)) {
-        return {rc, "sqlite3_bind_null() failed", _owner->database()};
+        return {rc, "sqlite3_bind_null() failed", _owner->connection()};
     }
     return rc;
 }
@@ -64,7 +64,7 @@ errable<void> binding::bind_null() {
 errable<void> binding::bind_zeroblob(zeroblob zb) {
     auto rc = errc{::sqlite3_bind_zeroblob64(OWNER_STMT_PTR, _index, zb.size)};
     if (is_error_rc(rc)) {
-        return {rc, "sqlite3_bind_zeroblob64() failed", _owner->database()};
+        return {rc, "sqlite3_bind_zeroblob64() failed", _owner->connection()};
     }
     return rc;
 }

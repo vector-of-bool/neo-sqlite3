@@ -7,20 +7,20 @@ struct sqlite3;
 
 namespace neo::sqlite3 {
 
-class database_ref;
+class connection_ref;
 
 namespace event {
 
 struct transaction_guard_begin {
-    database_ref& db;
+    connection_ref& db;
 };
 
 struct transaction_guard_rollback {
-    database_ref& db;
+    connection_ref& db;
 };
 
 struct transaction_guard_commit {
-    database_ref& db;
+    connection_ref& db;
 };
 
 }  // namespace event
@@ -28,7 +28,7 @@ struct transaction_guard_commit {
 /**
  * @brief Scope-guard for database transactions.
  *
- * When constructed, executes BEGIN on the database.
+ * When constructed, executes BEGIN on the connection.
  *
  * When destroyed:
  *
@@ -46,12 +46,12 @@ class [[nodiscard]] transaction_guard {
     ::sqlite3* _db                    = nullptr;
 
 public:
-    // Open a new transaction on the given database
-    explicit transaction_guard(database_ref db);
+    // Open a new transaction on the given connection
+    explicit transaction_guard(connection_ref db);
     ~transaction_guard() noexcept(false);
 
     // Move a transaction-guard. The transaction now lives as long as the moved-to transaction
-    transaction_guard(transaction_guard&& other) noexcept
+    transaction_guard(transaction_guard && other) noexcept
         : _n_uncaught_exceptions(other._n_uncaught_exceptions)
         , _db(std::exchange(other._db, nullptr)) {}
 
@@ -78,7 +78,7 @@ public:
  * @brief Like transaction_guard, but allows recursive transaction guarding.
  *
  * Behaves identically to transaction guard, except if a transaction is already
- * open on the database when this object is constructed, then this object's
+ * open on the connection when this object is constructed, then this object's
  * method become no-ops.
  */
 class [[nodiscard]] recursive_transaction_guard {
@@ -87,7 +87,7 @@ class [[nodiscard]] recursive_transaction_guard {
     std::optional<transaction_guard> _inner;
 
 public:
-    explicit recursive_transaction_guard(database_ref db);
+    explicit recursive_transaction_guard(connection_ref db);
     ~recursive_transaction_guard() noexcept(false) {}
 
     /// COMMIT if we are the top-level transaction

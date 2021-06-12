@@ -1,10 +1,10 @@
-#include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/connection.hpp>
 
 #include "./statement.hpp"
 
 #include "./tests.inl"
 
-TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Open a simple database") {}
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Open a simple connection") {}
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "We are not in a transaction by default") {
     CHECK_FALSE(db.is_transaction_active());
@@ -58,7 +58,7 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Count changes") {
     CHECK(db.total_changes() == 5);
 }
 
-TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Attach another database") {
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Attach another connection") {
     db.attach("new_temp", ":memory:").throw_if_error();
     db.exec("CREATE TABLE new_temp.foo (name TEXT)").throw_if_error();
     db.detach("new_temp").throw_if_error();

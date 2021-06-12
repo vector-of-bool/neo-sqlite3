@@ -1,6 +1,6 @@
 #include "./iter_rows.hpp"
 
-#include <neo/sqlite3/database.hpp>
+#include <neo/sqlite3/connection.hpp>
 #include <neo/sqlite3/statement.hpp>
 
 #include "./tests.inl"
