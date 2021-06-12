@@ -47,6 +47,32 @@ public:
      * look up the value in the cache.
      */
     [[nodiscard]] statement& operator()(sql_string_literal);
+
+    /**
+     * @brief Obtain the SQLite connection associated with this cache
+     */
+    [[nodiscard]] connection_ref connection() const noexcept;
 };
+
+namespace event {
+
+/**
+ * @brief Event fired when a cache-lookup fails to find a previously-prepared statement
+ */
+struct statement_cache_miss {
+    statement_cache&   cache;
+    sql_string_literal sql;
+};
+
+/**
+ * @brief Event fired when a cache-lookup finds a previously-prepared statement to reuse
+ */
+struct statement_cache_hit {
+    statement_cache&   cache;
+    sql_string_literal sql;
+    statement&         stmt;
+};
+
+}  // namespace event
 
 }  // namespace neo::sqlite3
