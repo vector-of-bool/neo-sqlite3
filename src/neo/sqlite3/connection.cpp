@@ -18,6 +18,7 @@ errable<connection> connection::open(const string& db_name, openmode mode) noexc
     auto rc = errc{::sqlite3_open_v2(db_name.data(), &new_db, static_cast<int>(mode), nullptr)};
     if (rc != errc::ok) {
         if (new_db) {
+            rc = errc{::sqlite3_extended_errcode(new_db)};
             // We created a database object, but failed to open the connection. Delete it now.
             std::ignore = connection{std::move(new_db)};
         }
