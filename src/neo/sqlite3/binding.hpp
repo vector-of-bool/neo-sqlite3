@@ -2,6 +2,7 @@
 
 #include "./fwd.hpp"
 
+#include "./blob_view.hpp"
 #include "./errable.hpp"
 
 #include <neo/concepts.hpp>
@@ -12,7 +13,17 @@
 #include <string_view>
 #include <tuple>
 
+struct sqlite3_stmt;
+
 namespace neo::sqlite3 {
+
+extern "C" namespace c_api {
+    int sqlite3_bind_blob(::sqlite3_stmt*,
+                          int         col,
+                          const void* data,
+                          int         n,
+                          void (*dtor)(void*)) noexcept;
+}
 
 class statement;
 
@@ -30,6 +41,7 @@ concept bindable =
     std::floating_point<std::remove_cvref_t<T>> ||
     alike<T, null_t> ||
     alike<T, zeroblob> ||
+    alike<T, blob_view> ||
     convertible_to<T, std::string_view>;
 // clang-format on
 
@@ -38,12 +50,14 @@ concept bindable =
  */
 class binding {
     friend class binding_access;
-    statement* _owner;
-    int        _index = 0;
+    ::sqlite3_stmt* _owner;
+    int             _index = 0;
 
-    explicit binding(statement& o, int idx)
-        : _owner(&o)
+    explicit binding(::sqlite3_stmt* o, int idx)
+        : _owner(o)
         , _index(idx) {}
+
+    errable<void> _make_error(errc rc, const char* message) noexcept;
 
 public:
     errable<void> bind_double(double);
@@ -52,6 +66,18 @@ public:
     errable<void> bind_str_copy(std::string_view s);
     errable<void> bind_null();
     errable<void> bind_zeroblob(zeroblob z);
+    errable<void> bind_blob_view(blob_view v) noexcept {
+        auto transient = static_cast<void (*)(void*)>(0);
+        auto rc        = errc{c_api::sqlite3_bind_blob(_owner,
+                                                _index,
+                                                v.data(),
+                                                static_cast<int>(v.size()),
+                                                transient)};
+        if (is_error_rc(rc)) {
+            return _make_error(rc, "sqlite3_bind_blob_failed");
+        }
+        return rc;
+    }
 
     template <bindable T>
     errable<void> bind(const T& value) {
@@ -67,6 +93,8 @@ public:
             return bind_null();
         } else if constexpr (same_as<T, zeroblob>) {
             return bind_zeroblob(value);
+        } else if constexpr (same_as<T, blob_view>) {
+            return bind_blob_view(value);
         } else {
             static_assert(same_as<T, void>,
                           "This static_assertion should not fire. Please file a bug report with "
@@ -124,7 +152,7 @@ concept bindable_tuple
  * @brief Access to modify the bindings of a prepared statement.
  */
 class binding_access {
-    statement* _owner;
+    ::sqlite3_stmt* _owner;
 
 public:
 private:
@@ -152,8 +180,8 @@ private:
     }
 
 public:
-    binding_access(statement& o)
-        : _owner(&o) {}
+    explicit binding_access(::sqlite3_stmt* o) noexcept
+        : _owner(o) {}
 
     /**
      * @brief Access the binding at 1-based-index 'idx'
@@ -161,7 +189,7 @@ public:
      * @param idx The index of the binding (First binding is at '1', NOT zero)
      * @return binding
      */
-    [[nodiscard]] binding operator[](int idx) noexcept { return binding{*_owner, idx}; }
+    [[nodiscard]] binding operator[](int idx) noexcept { return binding{_owner, idx}; }
     [[nodiscard]] binding operator[](const std::string& str) noexcept {
         return operator[](named_parameter_index(str));
     }

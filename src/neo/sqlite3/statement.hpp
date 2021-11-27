@@ -177,7 +177,7 @@ public:
     /**
      * @brief Access/modify the parameter bindings of this statement
      */
-    [[nodiscard]] auto bindings() noexcept { return binding_access{*this}; }
+    [[nodiscard]] auto bindings() noexcept { return binding_access{c_ptr()}; }
 
     /**
      * @brief Access the columne metadata of this statement.
@@ -221,10 +221,10 @@ class [[nodiscard]] auto_reset {
 
 public:
     constexpr auto_reset() noexcept = default;
-    explicit auto_reset(statement & st) noexcept
+    explicit auto_reset(statement& st) noexcept
         : _st(&st) {}
 
-    auto_reset(auto_reset && o) noexcept
+    auto_reset(auto_reset&& o) noexcept
         : _st(neo::take(o._st)) {}
 
     auto_reset& operator=(auto_reset&& o) noexcept {

@@ -125,6 +125,9 @@ template <typename... Ts>
  */
 template <typename... Ts>
 [[nodiscard]] inline errable<std::tuple<Ts...>> one_row(statement_mutref st) noexcept {
+    static_assert(((!std::same_as<Ts, blob_view> && !std::same_as<Ts, std::string_view>)&&...),
+                  "View types will be immediately expired before returning from "
+                  "neo::sqlite3::one_row(), and are therefore always undefined behavior.");
     auto rst = st->auto_reset();
     auto r   = next<Ts...>(st);
     if (!r.has_value()) {
@@ -140,6 +143,9 @@ template <typename... Ts>
  */
 template <typename T>
 [[nodiscard]] inline errable<T> one_cell(statement_mutref st) noexcept {
+    static_assert(!std::same_as<T, blob_view> && !std::same_as<T, std::string_view>,
+                  "View types will be immediately expired before returning from "
+                  "neo::sqlite3::one_cell(), and are therefore always undefined behavior.");
     auto rst = st->auto_reset();
     auto r   = next<T>(st);
     if (!r.has_value()) {
