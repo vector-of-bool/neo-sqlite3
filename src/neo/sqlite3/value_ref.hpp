@@ -14,11 +14,11 @@ struct sqlite3_value;
 namespace neo::sqlite3 {
 
 extern "C" namespace c_api {
-    int          sqlite3_value_type(::sqlite3_value*) noexcept;
-    std::int64_t sqlite3_value_int64(::sqlite3_value*) noexcept;
-    double       sqlite3_value_double(::sqlite3_value*) noexcept;
+    int          sqlite3_value_type(::sqlite3_value*);
+    std::int64_t sqlite3_value_int64(::sqlite3_value*);
+    double       sqlite3_value_double(::sqlite3_value*);
 
-    const unsigned char* sqlite3_value_text(::sqlite3_value*) noexcept;
+    const unsigned char* sqlite3_value_text(::sqlite3_value*);
 }
 
 class row_access;

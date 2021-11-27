@@ -7,8 +7,8 @@ struct sqlite3_value;
 namespace neo::sqlite3 {
 
 extern "C" namespace c_api {
-    int         sqlite3_value_bytes(::sqlite3_value*) noexcept;
-    const void* sqlite3_value_blob(::sqlite3_value*) noexcept;
+    int         sqlite3_value_bytes(::sqlite3_value*);
+    const void* sqlite3_value_blob(::sqlite3_value*);
 }
 
 /**
