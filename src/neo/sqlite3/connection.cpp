@@ -12,10 +12,10 @@ using namespace neo::sqlite3;
 using std::string;
 using std::string_view;
 
-errable<connection> connection::open(const string& db_name) noexcept {
-    neo::emit(event::open_before{db_name});
+errable<connection> connection::open(const string& db_name, openmode mode) noexcept {
+    neo::emit(event::open_before{db_name, mode});
     ::sqlite3* new_db = nullptr;
-    auto       rc     = errc{::sqlite3_open(db_name.data(), &new_db)};
+    auto rc = errc{::sqlite3_open_v2(db_name.data(), &new_db, static_cast<int>(mode), nullptr)};
     if (rc != errc::ok) {
         if (new_db) {
             // We created a database object, but failed to open the connection. Delete it now.

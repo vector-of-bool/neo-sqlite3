@@ -3,6 +3,7 @@
 #include "./errable.hpp"
 
 #include <neo/assert.hpp>
+#include <neo/enum.hpp>
 
 #include <optional>
 #include <string_view>
@@ -19,10 +20,45 @@ class statement;
 
 enum class fn_flags;
 
+/**
+ * @brief Bit flag options for opening a database connection.
+ *
+ * These values are taken directly from the SQLite open operations.
+ */
+enum class openmode : int {
+    /// Open the database in readonly mode
+    readonly = 0x01,
+    /// Open the database in read+write mode (The default)
+    readwrite = 0x02,
+    /// Create the database file if it does not exists (Default true)
+    create = 0x04,
+
+    deleteonclose = 0x08,
+    exclusive     = 0x10,
+    autoproxy     = 0x20,
+    uri           = 0x40,
+    memory        = 0x80,
+    main_db       = 0x100,
+    temp_db       = 0x200,
+    transient_db  = 0x400,
+    main_journal  = 0x1000,
+    subjournal    = 0x2000,
+    super_journal = 0x4000,
+    nomutex       = 0x8000,
+    fullmutex     = 0x10000,
+    sharedcache   = 0x20000,
+    privatecate   = 0x40000,
+    wal           = 0x80000,
+    nofollow      = 0x100000,
+};
+
+NEO_DECL_ENUM_BITOPS(openmode);
+
 namespace event {
 
 struct open_before {
     std::string_view filename;
+    openmode         mode;
 };
 
 struct open_error {
@@ -242,7 +278,10 @@ public:
      * @return std::optional<connection> Returns nullopt if opening failed, otherwise a new
      * connection
      */
-    [[nodiscard]] static errable<connection> open(const std::string& s) noexcept;
+    [[nodiscard]] static errable<connection> open(const std::string& s, openmode mode) noexcept;
+    [[nodiscard]] static errable<connection> open(const std::string& s) noexcept {
+        return open(s, openmode::readwrite | openmode::create);
+    }
     /// Create a new in-memory database
     [[nodiscard]] static errable<connection> create_memory_db() noexcept {
         return open(":memory:");
