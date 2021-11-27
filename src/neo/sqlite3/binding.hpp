@@ -18,11 +18,18 @@ struct sqlite3_stmt;
 namespace neo::sqlite3 {
 
 extern "C" namespace c_api {
-    int sqlite3_bind_blob(::sqlite3_stmt*,
+    int sqlite3_bind_blob(::sqlite3_stmt*, int col, const void* data, int n, void (*dtor)(void*));
+    int sqlite3_bind_double(::sqlite3_stmt*, int col, double v);
+    int sqlite3_bind_int64(::sqlite3_stmt*, int col, std::int64_t v);
+    int sqlite3_bind_null(::sqlite3_stmt*, int col);
+    int sqlite3_bind_text(::sqlite3_stmt*,
                           int         col,
-                          const void* data,
-                          int         n,
-                          void (*dtor)(void*)) noexcept;
+                          const char* cstr,
+                          int         length,
+                          void (*dtor)(void*),
+                          int flags);
+    int sqlite3_bind_zeroblob(::sqlite3_stmt*, int col, int size);
+    int sqlite3_clear_bindings(::sqlite3_stmt*);
 }
 
 class statement;
@@ -57,15 +64,57 @@ class binding {
         : _owner(o)
         , _index(idx) {}
 
-    errable<void> _make_error(errc rc, const char* message) noexcept;
+    errable<void> _make_error(errc rc, const char* message) const noexcept;
+    errable<void> _maybe_make_error(errc rc, const char* message) const noexcept {
+        if (is_error_rc(rc)) {
+            return _make_error(rc, message);
+        }
+        return rc;
+    }
 
 public:
-    errable<void> bind_double(double);
-    errable<void> bind_i64(std::int64_t);
-    errable<void> bind_str_nocopy(std::string_view s);
-    errable<void> bind_str_copy(std::string_view s);
-    errable<void> bind_null();
-    errable<void> bind_zeroblob(zeroblob z);
+    errable<void> bind_double(double d) noexcept {
+        auto rc = errc{c_api::sqlite3_bind_double(_owner, _index, d)};
+        return _maybe_make_error(rc, "sqlite3_bind_double() failed");
+    }
+
+    errable<void> bind_i64(std::int64_t i) noexcept {
+        auto rc = errc{c_api::sqlite3_bind_int64(_owner, _index, i)};
+        return _maybe_make_error(rc, "sqlite3_bind_int64() failed");
+    }
+
+    errable<void> bind_str_nocopy(std::string_view s) noexcept {
+        auto rc = errc{c_api::sqlite3_bind_text(_owner,
+                                                _index,
+                                                s.data(),
+                                                static_cast<int>(s.size()),
+                                                nullptr /* SQLITE_STATIC */,
+                                                1 /* SQLITE_UTF8 */)};
+        return _maybe_make_error(rc, "sqlite_bind_text() failed");
+    }
+
+    errable<void> bind_str_copy(std::string_view s) noexcept {
+        auto transient = (void (*)(void*))(-1);
+
+        auto rc = errc{c_api::sqlite3_bind_text(_owner,
+                                                _index,
+                                                s.data(),
+                                                static_cast<int>(s.size()),
+                                                transient,
+                                                1 /* SQLITE_UTF8 */)};
+        return _maybe_make_error(rc, "sqlite_bind_text() failed");
+    }
+
+    errable<void> bind_null() noexcept {
+        auto rc = errc{c_api::sqlite3_bind_null(_owner, _index)};
+        return _maybe_make_error(rc, "sqlite_bind_null() failed");
+    }
+
+    errable<void> bind_zeroblob(zeroblob z) noexcept {
+        auto rc = errc{c_api::sqlite3_bind_zeroblob(_owner, _index, static_cast<int>(z.size))};
+        return _maybe_make_error(rc, "sqlite_bind_zeroblob() failed");
+    }
+
     errable<void> bind_blob_view(blob_view v) noexcept {
         auto transient = static_cast<void (*)(void*)>(0);
         auto rc        = errc{c_api::sqlite3_bind_blob(_owner,
@@ -80,7 +129,7 @@ public:
     }
 
     template <bindable T>
-    errable<void> bind(const T& value) {
+    errable<void> bind(const T& value) noexcept {
         if constexpr (std::floating_point<T>) {
             return bind_double(value);
         } else if constexpr (integral<T>) {
@@ -208,7 +257,7 @@ public:
     /**
      * @brief Reset the bound values for the prepared statement.
      */
-    void clear() noexcept;
+    void clear() noexcept { c_api::sqlite3_clear_bindings(_owner); }
 
     template <bindable_tuple Tuple, std::size_t S = std::tuple_size_v<std::decay_t<Tuple>>>
     Tuple&& operator=(Tuple&& tup) {
