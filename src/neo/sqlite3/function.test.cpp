@@ -38,3 +38,11 @@ TEST_CASE("Destroys function objects") {
     // DB shutdown destroys the object
     CHECK(n_destroys == 1);
 }
+
+TEST_CASE("Function of any arg type") {
+    auto db = *neo::sqlite3::create_memory_db();
+    db.register_function("just", [](neo::sqlite3::value_ref value) { return value; });
+    auto st      = *db.prepare("SELECT just(16)");
+    auto [value] = *neo::sqlite3::next<int>(st);
+    CHECK(value == 16);
+}

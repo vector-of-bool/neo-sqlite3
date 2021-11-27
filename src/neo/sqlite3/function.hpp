@@ -5,6 +5,7 @@
 
 #include <neo/assert.hpp>
 #include <neo/enum.hpp>
+#include <neo/function_traits.hpp>
 #include <neo/fwd.hpp>
 
 #include <memory>
@@ -17,44 +18,6 @@ struct sqlite3_context;
 namespace neo::sqlite3 {
 
 namespace detail {
-
-template <typename... Args>
-struct argtypes_tag {
-    constexpr static std::size_t count = sizeof...(Args);
-};
-
-template <typename... Args>
-struct is_argtypes {
-    using type = argtypes_tag<std::decay_t<Args>...>;
-};
-
-template <typename Func>
-struct infer_argtypes {
-    using type = void;
-};
-
-template <typename Owner, typename Ret, typename... Args>
-struct infer_argtypes<Ret (Owner::*)(Args...)> : is_argtypes<Args...> {};
-
-template <typename Owner, typename Ret, typename... Args>
-struct infer_argtypes<Ret (Owner::*)(Args...) const> : is_argtypes<Args...> {};
-
-template <typename Owner, typename Ret, typename... Args>
-struct infer_argtypes<Ret (Owner::*)(Args...) noexcept> : is_argtypes<Args...> {};
-
-template <typename Owner, typename Ret, typename... Args>
-struct infer_argtypes<Ret (Owner::*)(Args...) const noexcept> : is_argtypes<Args...> {};
-
-template <typename Ret, typename... Args>
-struct infer_argtypes<Ret (*)(Args...)> : is_argtypes<Args...> {};
-
-template <typename Func>
-requires requires {
-    &std::decay_t<Func>::operator();
-}
-struct infer_argtypes<Func> {
-    using type = typename infer_argtypes<decltype(&std::decay_t<Func>::operator())>::type;
-};
 
 class fn_wrapper_base {
 public:
@@ -71,13 +34,14 @@ protected:
     void set_result(sqlite3_context* ctx, std::int64_t) noexcept;
     void set_result(sqlite3_context* ctx, double) noexcept;
     void set_result(sqlite3_context* ctx, std::string_view) noexcept;
+    void set_result(sqlite3_context* ctx, value_ref) noexcept;
 };
 
 template <typename Func, typename ArgTypesTag>
 class fn_wrapper;
 
 template <typename Func, typename... ArgTypes>
-class fn_wrapper<Func, argtypes_tag<ArgTypes...>> : public fn_wrapper_base {
+class fn_wrapper<Func, neo::tag<ArgTypes...>> : public fn_wrapper_base {
 public:
     template <typename FuncArg>
     fn_wrapper(FuncArg&& fn)
@@ -88,7 +52,11 @@ private:
 
     template <typename T>
     T _get_arg(sqlite3_value* ptr) {
-        return value_ref(ptr).as<T>();
+        if constexpr (std::same_as<T, value_ref>) {
+            return value_ref(ptr);
+        } else {
+            return value_ref(ptr).as<T>();
+        }
     }
 
     template <std::size_t... Is>
@@ -141,15 +109,16 @@ void connection_ref::register_function(const std::string& name, Func&& fn) {
 
 template <typename Func>
 void connection_ref::register_function(const std::string& name, fn_flags flags, Func&& fn) {
-    using argtypes = typename detail::infer_argtypes<Func>::type;
-    static_assert(!std::is_void_v<argtypes>,
+    static_assert(neo::fixed_invocable<Func>,
                   "Unable to infer the argument types of the function object. Did you pass a "
                   "callable object? Argument type detection can fail if you passed a callable "
                   "object with a generic/templated call operator (including as a closure from a "
                   "generic lambda expression).");
+    using signature = neo::invocable_signature<Func>;
+    using argtypes  = typename signature::arg_types;
     // Generate the wrapper, and register
     auto wrapper = std::make_unique<detail::fn_wrapper<std::decay_t<Func>, argtypes>>(NEO_FWD(fn));
-    detail::register_function(_ptr, name, std::move(wrapper), argtypes::count, flags);
+    detail::register_function(_ptr, name, std::move(wrapper), tag_size_v<argtypes>, flags);
 }
 
 }  // namespace neo::sqlite3

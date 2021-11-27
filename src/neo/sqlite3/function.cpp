@@ -28,9 +28,7 @@ void invoke_fn_wrapper_shared_ptr(::sqlite3_context* context,
                                   ::sqlite3_value**  values) noexcept {
     auto  udata_ptr      = ::sqlite3_user_data(context);
     auto& fn_wrapper_ptr = *get_fn_wrapper_ptr(udata_ptr);
-    fn_wrapper_ptr.invoke(reinterpret_cast<sqlite3_context*>(context),
-                          nargs,
-                          reinterpret_cast<::sqlite3_value**>(values));
+    fn_wrapper_ptr.invoke(context, nargs, values);
 }
 
 }  // namespace
@@ -52,20 +50,18 @@ void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, double d) noexcep
 }
 
 void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, std::string_view str) noexcept {
-    ::sqlite3_result_text64(reinterpret_cast<::sqlite3_context*>(ctx),
-                            str.data(),
-                            str.size(),
-                            SQLITE_TRANSIENT,
-                            SQLITE_UTF8);
+    ::sqlite3_result_text64(ctx, str.data(), str.size(), SQLITE_TRANSIENT, SQLITE_UTF8);
 }
 
-void detail::register_function(::sqlite3*                               db_,
+void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, value_ref value) noexcept {
+    ::sqlite3_result_value(ctx, value.c_ptr());
+}
+
+void detail::register_function(::sqlite3*                               db,
                                const std::string&                       name,
                                std::unique_ptr<detail::fn_wrapper_base> wrapper,
                                std::size_t                              argc,
                                fn_flags                                 flags) {
-    auto db = reinterpret_cast<::sqlite3*>(db_);
-
     int flags_i = SQLITE_UTF8;
 #ifdef SQLITE_DIRECTONLY
     if (!test_flags(flags, fn_flags::allow_indirect)) {
