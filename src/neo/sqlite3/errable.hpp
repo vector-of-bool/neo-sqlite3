@@ -70,7 +70,7 @@ class errable : errable_base {
 
 public:
     template <std::convertible_to<T> Arg>
-    constexpr errable(Arg&& arg) noexcept(noexcept(std::is_nothrow_convertible_v<Arg, T>))
+    constexpr errable(Arg&& arg) noexcept(std::is_nothrow_convertible_v<Arg, T>)
         : errable_base(neo::sqlite3::errc::ok)
         , _value((Arg &&)(arg)) {}
 
