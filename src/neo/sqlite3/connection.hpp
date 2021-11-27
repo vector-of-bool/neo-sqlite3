@@ -14,7 +14,7 @@ struct sqlite3;
 
 namespace neo::sqlite3 {
 
-class blob;
+class blob_io;
 
 class statement;
 
@@ -160,13 +160,13 @@ public:
     /// Obtain the number of rows added/deleted/modified since the connection was opened.
     [[nodiscard]] int total_changes() const noexcept;
 
-    [[nodiscard]] errable<blob>
+    [[nodiscard]] errable<blob_io>
     open_blob(const std::string& table, const std::string& column, std::int64_t rowid);
 
-    [[nodiscard]] errable<blob> open_blob(const std::string& db,
-                                          const std::string& table,
-                                          const std::string& column,
-                                          std::int64_t       rowid);
+    [[nodiscard]] errable<blob_io> open_blob(const std::string& db,
+                                             const std::string& table,
+                                             const std::string& column,
+                                             std::int64_t       rowid);
 
     /**
      * @brief Obtain an error message string related to the most recent error

@@ -17,8 +17,8 @@ enum class value_type;
 class value_ref;
 enum class fn_flags;
 
+class blob_io;
 class blob_view;
-class blob;
 class statement;
 
 class connection;

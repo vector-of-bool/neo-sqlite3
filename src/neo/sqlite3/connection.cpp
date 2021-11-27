@@ -72,15 +72,15 @@ std::int64_t connection_ref::last_insert_rowid() const noexcept {
 int connection_ref::changes() const noexcept { return ::sqlite3_changes(c_ptr()); }
 int connection_ref::total_changes() const noexcept { return ::sqlite3_total_changes(c_ptr()); }
 
-errable<blob>
+errable<blob_io>
 connection_ref::open_blob(const string& table, const string& column, std::int64_t rowid) {
     return open_blob("main", table, column, rowid);
 }
 
-errable<blob> connection_ref::open_blob(const string& db,
-                                        const string& table,
-                                        const string& column,
-                                        std::int64_t  rowid) {
+errable<blob_io> connection_ref::open_blob(const string& db,
+                                           const string& table,
+                                           const string& column,
+                                           std::int64_t  rowid) {
     ::sqlite3_blob* ret_ptr = nullptr;
     // TODO: Expose options for read-only blobs
     auto rc = errc{::sqlite3_blob_open(c_ptr(),
@@ -95,7 +95,7 @@ errable<blob> connection_ref::open_blob(const string& db,
         return {rc, "sqlite3_blob_open() failed", *this};
     }
 
-    return blob(blob::from_raw(), ret_ptr);
+    return blob_io(std::move(ret_ptr));
 }
 
 std::string_view connection_ref::error_message() const noexcept {
