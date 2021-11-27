@@ -17,6 +17,10 @@ errable<connection> connection::open(const string& db_name) noexcept {
     ::sqlite3* new_db = nullptr;
     auto       rc     = errc{::sqlite3_open(db_name.data(), &new_db)};
     if (rc != errc::ok) {
+        if (new_db) {
+            // We created a database object, but failed to open the connection. Delete it now.
+            std::ignore = connection{std::move(new_db)};
+        }
         neo::emit(event::open_error{db_name, rc});
         return {rc, "Failed to open connection"};
     }
