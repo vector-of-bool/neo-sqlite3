@@ -22,12 +22,12 @@ extern "C" namespace c_api {
     int sqlite3_bind_double(::sqlite3_stmt*, int col, double v);
     int sqlite3_bind_int64(::sqlite3_stmt*, int col, std::int64_t v);
     int sqlite3_bind_null(::sqlite3_stmt*, int col);
-    int sqlite3_bind_text(::sqlite3_stmt*,
-                          int         col,
-                          const char* cstr,
-                          int         length,
-                          void (*dtor)(void*),
-                          int flags);
+    int sqlite3_bind_text64(::sqlite3_stmt*,
+                            int           col,
+                            const char*   cstr,
+                            std::uint64_t length,
+                            void (*dtor)(void*),
+                            unsigned char encoding);
     int sqlite3_bind_zeroblob(::sqlite3_stmt*, int col, int size);
     int sqlite3_clear_bindings(::sqlite3_stmt*);
 }
@@ -84,24 +84,24 @@ public:
     }
 
     errable<void> bind_str_nocopy(std::string_view s) noexcept {
-        auto rc = errc{c_api::sqlite3_bind_text(_owner,
-                                                _index,
-                                                s.data(),
-                                                static_cast<int>(s.size()),
-                                                nullptr /* SQLITE_STATIC */,
-                                                1 /* SQLITE_UTF8 */)};
+        auto rc = errc{c_api::sqlite3_bind_text64(_owner,
+                                                  _index,
+                                                  s.data(),
+                                                  static_cast<std::uint64_t>(s.size()),
+                                                  nullptr /* SQLITE_STATIC */,
+                                                  1 /* SQLITE_UFT8 */)};
         return _maybe_make_error(rc, "sqlite_bind_text() failed");
     }
 
     errable<void> bind_str_copy(std::string_view s) noexcept {
         auto transient = (void (*)(void*))(-1);
 
-        auto rc = errc{c_api::sqlite3_bind_text(_owner,
-                                                _index,
-                                                s.data(),
-                                                static_cast<int>(s.size()),
-                                                transient,
-                                                1 /* SQLITE_UTF8 */)};
+        auto rc = errc{c_api::sqlite3_bind_text64(_owner,
+                                                  _index,
+                                                  s.data(),
+                                                  static_cast<std::uint64_t>(s.size()),
+                                                  transient /* SQLITE_TRANSIENT */,
+                                                  1 /* SQLITE_UFT8 */)};
         return _maybe_make_error(rc, "sqlite_bind_text() failed");
     }
 
