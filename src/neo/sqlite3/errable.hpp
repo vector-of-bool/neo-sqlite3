@@ -75,9 +75,10 @@ public:
         , _value((Arg &&)(arg)) {}
 
     template <typename... Args>
-    requires std::constructible_from<T, Args&&...> && (sizeof...(Args) > 0)  //
-        constexpr errable(enum errc rc, Args&&... args) noexcept(
-            noexcept(std::is_nothrow_constructible_v<T, Args&&...>))
+    requires std::constructible_from<T, Args&&...> &&(sizeof...(Args) > 0)  //
+        constexpr errable(enum errc rc,
+                          Args&&... args)  //
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>)
         : errable_base(rc)
         , _value(in_place_t{}, (Args &&)(args)...) {}
 
