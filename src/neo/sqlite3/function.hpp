@@ -87,7 +87,7 @@ private:
 };
 
 void register_function(::sqlite3*                       db,
-                       const std::string&               name,
+                       neo::zstring_view                name,
                        std::unique_ptr<fn_wrapper_base> ptr,
                        std::size_t                      argc,
                        fn_flags                         flags);
@@ -103,12 +103,12 @@ enum class fn_flags {
 NEO_DECL_ENUM_BITOPS(fn_flags);
 
 template <typename Func>
-void connection_ref::register_function(const std::string& name, Func&& fn) {
+void connection_ref::register_function(neo::zstring_view name, Func&& fn) {
     register_function(name, fn_flags::none, NEO_FWD(fn));
 }
 
 template <typename Func>
-void connection_ref::register_function(const std::string& name, fn_flags flags, Func&& fn) {
+void connection_ref::register_function(neo::zstring_view name, fn_flags flags, Func&& fn) {
     static_assert(neo::fixed_invocable<Func>,
                   "Unable to infer the argument types of the function object. Did you pass a "
                   "callable object? Argument type detection can fail if you passed a callable "

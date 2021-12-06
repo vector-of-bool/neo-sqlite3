@@ -1,13 +1,12 @@
 #pragma once
 
+#include "./errable_fwd.hpp"
+
 namespace neo::sqlite3 {
 
 class row_access;
 template <typename... Ts>
 class typed_row;
-
-template <typename T>
-class errable;
 
 constexpr inline struct null_t {
 } null;

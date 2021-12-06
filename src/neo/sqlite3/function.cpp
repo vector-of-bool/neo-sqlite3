@@ -58,7 +58,7 @@ void detail::fn_wrapper_base::set_result(sqlite3_context* ctx, value_ref value) 
 }
 
 void detail::register_function(::sqlite3*                               db,
-                               const std::string&                       name,
+                               zstring_view                             name,
                                std::unique_ptr<detail::fn_wrapper_base> wrapper,
                                std::size_t                              argc,
                                fn_flags                                 flags) {

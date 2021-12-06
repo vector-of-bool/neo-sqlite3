@@ -5,6 +5,8 @@
 #include <neo/assert.hpp>
 #include <neo/iterator_facade.hpp>
 
+#include "./statement.hpp"
+
 namespace neo::sqlite3 {
 
 class statement;
@@ -51,7 +53,7 @@ public:
                        _st != nullptr,
                        "Dereference of row-iterator with no associated statement");
             neo_assert(expects, !at_end(), "Dereference of finished row-iterator");
-            return row_access{*_st};
+            return row_access{_st->c_ptr()};
         }
 
         void increment();

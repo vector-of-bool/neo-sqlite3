@@ -114,4 +114,12 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Pull the next result") {
     CHECK(st.is_busy());  // Still waiting
     CHECK_THROWS_AS(*neo::sqlite3::next<int>(st),
                     neo::sqlite3::errc_error<neo::sqlite3::errc::done>);
+
+    db.exec("DELETE FROM foo").throw_if_error();
+    CHECK_NOTHROW(neo::sqlite3::one_row<int>(st));
+    CHECK_NOTHROW(neo::sqlite3::one_cell<int>(st));
+    CHECK_THROWS_AS(*neo::sqlite3::one_row<int>(st),
+                    neo::sqlite3::errc_error<neo::sqlite3::errc::done>);
+    CHECK_THROWS_AS(*neo::sqlite3::one_cell<int>(st),
+                    neo::sqlite3::errc_error<neo::sqlite3::errc::done>);
 }

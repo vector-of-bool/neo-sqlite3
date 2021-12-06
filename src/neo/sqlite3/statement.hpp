@@ -172,17 +172,17 @@ public:
     /**
      * @brief Access to the current row of this statement.
      */
-    [[nodiscard]] auto row() const noexcept { return row_access{*this}; }
+    [[nodiscard]] row_access row() const noexcept { return row_access{c_ptr()}; }
 
     /**
      * @brief Access/modify the parameter bindings of this statement
      */
-    [[nodiscard]] auto bindings() noexcept { return binding_access{c_ptr()}; }
+    [[nodiscard]] binding_access bindings() noexcept { return binding_access{c_ptr()}; }
 
     /**
      * @brief Access the columne metadata of this statement.
      */
-    [[nodiscard]] auto columns() noexcept { return column_access{*this}; }
+    [[nodiscard]] column_access columns() noexcept { return column_access{*this}; }
 
     /// Get a reference to the connection associated with this statement
     [[nodiscard]] connection_ref connection() noexcept;
