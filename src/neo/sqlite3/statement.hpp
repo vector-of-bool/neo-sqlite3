@@ -1,15 +1,12 @@
 #pragma once
 
 #include "./binding.hpp"
-#include "./errable.hpp"
-#include "./error.hpp"
+#include "./errable_fwd.hpp"
+#include "./errc.hpp"
 #include "./row.hpp"
 
-#include <neo/assert.hpp>
-#include <neo/ref.hpp>
+#include <neo/mutref.hpp>
 #include <neo/utility.hpp>
-
-#include <new>
 
 struct sqlite3_stmt;
 struct sqlite3;
@@ -92,10 +89,7 @@ public:
      *
      * @param idx The index of the column. Left-most column is index zero
      */
-    [[nodiscard]] column operator[](int idx) const noexcept {
-        neo_assert(expects, idx < count(), "Column index is out-of-range", idx, count());
-        return column{*_owner, idx};
-    }
+    [[nodiscard]] column operator[](int idx) const noexcept;
 
     [[nodiscard]] int count() const noexcept;
 };

@@ -1,5 +1,6 @@
 #include "./exec.hpp"
 
+#include <neo/sqlite3/error.hpp>
 #include <neo/sqlite3/exec.hpp>
 #include <neo/sqlite3/iter_tuples.hpp>
 #include <neo/sqlite3/statement_cache.hpp>

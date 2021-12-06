@@ -7,7 +7,6 @@
 #include <neo/pp.hpp>
 
 #include <concepts>
-#include <string_view>
 
 struct sqlite3;
 
@@ -139,13 +138,13 @@ public:
         if (!has_value()) {                                                                        \
             throw_error();                                                                         \
         }                                                                                          \
-        return std::move(_value.get());                                                            \
+        return static_cast<T&&>(_value.get());                                                     \
     }                                                                                              \
     constexpr const T&& Name() const&& {                                                           \
         if (!has_value()) {                                                                        \
             throw_error();                                                                         \
         }                                                                                          \
-        return std::move(_value.get());                                                            \
+        return static_cast<const T&&>(_value.get());                                               \
     }                                                                                              \
     static_assert(true)
 
