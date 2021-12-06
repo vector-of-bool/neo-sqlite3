@@ -1,11 +1,10 @@
 #pragma once
 
 #include "./row.hpp"
+#include "./statement.hpp"
 
 #include <neo/assert.hpp>
 #include <neo/iterator_facade.hpp>
-
-#include "./statement.hpp"
 
 namespace neo::sqlite3 {
 

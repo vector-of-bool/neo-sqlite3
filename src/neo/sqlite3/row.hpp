@@ -28,7 +28,6 @@ struct type_at<I, Head, Tail...> : type_at<I - 1, Tail...> {};
 
 }  // namespace detail
 
-class statement;
 class value_ref;
 
 /**
@@ -99,9 +98,6 @@ class typed_row {
     row_access _row;
 
 public:
-    // explicit typed_row(const statement& st) noexcept
-    //     : _row(st) {}
-
     explicit typed_row(::sqlite3_stmt* st) noexcept
         : _row(st) {}
 
