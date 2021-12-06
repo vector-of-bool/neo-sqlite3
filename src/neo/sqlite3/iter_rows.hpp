@@ -28,7 +28,7 @@ public:
      *
      * @param st The statement from which to pull results
      */
-    explicit iter_rows(statement& st)
+    explicit iter_rows(statement& st) noexcept
         : _st(&st) {}
 
     /**
@@ -68,7 +68,7 @@ public:
      * Calling this function will execute the statement *once* to ready the first
      * result. Beware calling this multiple times.
      */
-    [[nodiscard]] iterator begin() const noexcept {
+    [[nodiscard]] iterator begin() const {
         neo_assert(expects, _st != nullptr, "Called begin() on default-constructed iter_rows");
         return iterator(*_st);
     }
