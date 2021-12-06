@@ -78,10 +78,8 @@ public:
 template <typename... Ts>
 constexpr inline bool ranges::v3::enable_view<neo::sqlite3::iter_tuples<Ts...>> = true;
 #endif
+#endif
 
-#if __has_include(<ranges>)
 #include <ranges>
 template <typename... Ts>
 constexpr inline bool std::ranges::enable_view<neo::sqlite3::iter_tuples<Ts...>> = true;
-#endif
-#endif
