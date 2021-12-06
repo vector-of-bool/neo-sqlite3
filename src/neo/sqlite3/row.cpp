@@ -9,7 +9,7 @@ using namespace neo::sqlite3;
 
 void row_access::_assert_running() const noexcept {
     neo_assert(expects,
-               ::sqlite3_get_autocommit(::sqlite3_db_handle(_owner)) == 1,
+               ::sqlite3_stmt_busy(_owner) != 0,
                "Attempted to access value from a row in an idle statement. Either `step()` was "
                "never called, or the statement needs to be `reset()`");
 }
