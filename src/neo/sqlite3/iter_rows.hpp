@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./row.hpp"
+#include "./statement.hpp"
 
 #include <neo/assert.hpp>
 #include <neo/iterator_facade.hpp>
@@ -27,7 +28,7 @@ public:
      *
      * @param st The statement from which to pull results
      */
-    explicit iter_rows(statement& st)
+    explicit iter_rows(statement& st) noexcept
         : _st(&st) {}
 
     /**
@@ -51,7 +52,7 @@ public:
                        _st != nullptr,
                        "Dereference of row-iterator with no associated statement");
             neo_assert(expects, !at_end(), "Dereference of finished row-iterator");
-            return row_access{*_st};
+            return row_access{_st->c_ptr()};
         }
 
         void increment();
@@ -67,7 +68,7 @@ public:
      * Calling this function will execute the statement *once* to ready the first
      * result. Beware calling this multiple times.
      */
-    [[nodiscard]] iterator begin() const noexcept {
+    [[nodiscard]] iterator begin() const {
         neo_assert(expects, _st != nullptr, "Called begin() on default-constructed iter_rows");
         return iterator(*_st);
     }
@@ -86,10 +87,8 @@ public:
 template <>
 constexpr inline bool ranges::v3::enable_view<neo::sqlite3::iter_rows> = true;
 #endif
+#endif
 
-#if __has_include(<ranges>)
 #include <ranges>
 template <>
 constexpr inline bool std::ranges::enable_view<neo::sqlite3::iter_rows> = true;
-#endif
-#endif

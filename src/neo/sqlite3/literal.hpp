@@ -1,8 +1,7 @@
 #pragma once
 
+#include <compare>
 #include <cstdint>
-#include <functional>
-#include <string_view>
 
 namespace neo::sqlite3 {
 
@@ -26,27 +25,21 @@ constexpr sql_string_literal operator""_sql(const char*, std::size_t) noexcept;
 class sql_string_literal {
     friend constexpr sql_string_literal literals::operator""_sql(const char*, std::size_t) noexcept;
 
-    std::string_view _str = "[invalid]";
+    const char* _str = "[invalid]";
 
     sql_string_literal() = default;
 
 public:
-    /// Obtain the string view of this literal
-    constexpr std::string_view string() const noexcept { return _str; }
+    /// Obtain the string of this literal
+    constexpr const char* string() const noexcept { return _str; }
 
-    friend constexpr bool operator<(sql_string_literal lhs, sql_string_literal rhs) noexcept {
-        /// Just address-compare the string pointers
-        return std::less<>()(lhs._str.data(), rhs._str.data());
+    friend constexpr auto operator<=>(sql_string_literal left, sql_string_literal right) noexcept {
+        return left._str <=> right._str;
     }
 
     friend constexpr bool operator==(sql_string_literal lhs, sql_string_literal rhs) noexcept {
         /// Only equivalent if they are the same literal
-        return std::equal_to<>()(lhs._str.data(), rhs._str.data());
-    }
-
-    friend constexpr bool operator!=(sql_string_literal       lhs,
-                                     const sql_string_literal rhs) noexcept {
-        return !(lhs == rhs);
+        return lhs._str == rhs._str;
     }
 };
 
@@ -56,10 +49,9 @@ inline namespace literals {
  * @brief Create a new sql_string_literal from a string literal. This is the
  * only way to create sql_string_literal objects.
  */
-[[nodiscard]] constexpr sql_string_literal operator""_sql(const char* ptr,
-                                                          std::size_t len) noexcept {
+[[nodiscard]] constexpr sql_string_literal operator""_sql(const char* ptr, std::size_t) noexcept {
     sql_string_literal ret;
-    ret._str = std::string_view(ptr, len);
+    ret._str = ptr;
     return ret;
 }
 }  // namespace literals

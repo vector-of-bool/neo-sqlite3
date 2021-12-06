@@ -1,15 +1,12 @@
 #pragma once
 
 #include "./binding.hpp"
-#include "./errable.hpp"
-#include "./error.hpp"
+#include "./errable_fwd.hpp"
+#include "./errc.hpp"
 #include "./row.hpp"
 
-#include <neo/assert.hpp>
-#include <neo/ref.hpp>
+#include <neo/mutref.hpp>
 #include <neo/utility.hpp>
-
-#include <new>
 
 struct sqlite3_stmt;
 struct sqlite3;
@@ -92,10 +89,7 @@ public:
      *
      * @param idx The index of the column. Left-most column is index zero
      */
-    [[nodiscard]] column operator[](int idx) const noexcept {
-        neo_assert(expects, idx < count(), "Column index is out-of-range", idx, count());
-        return column{*_owner, idx};
-    }
+    [[nodiscard]] column operator[](int idx) const noexcept;
 
     [[nodiscard]] int count() const noexcept;
 };
@@ -172,17 +166,17 @@ public:
     /**
      * @brief Access to the current row of this statement.
      */
-    [[nodiscard]] auto row() const noexcept { return row_access{*this}; }
+    [[nodiscard]] row_access row() const noexcept { return row_access{c_ptr()}; }
 
     /**
      * @brief Access/modify the parameter bindings of this statement
      */
-    [[nodiscard]] auto bindings() noexcept { return binding_access{*this}; }
+    [[nodiscard]] binding_access bindings() noexcept { return binding_access{c_ptr()}; }
 
     /**
      * @brief Access the columne metadata of this statement.
      */
-    [[nodiscard]] auto columns() noexcept { return column_access{*this}; }
+    [[nodiscard]] column_access columns() noexcept { return column_access{*this}; }
 
     /// Get a reference to the connection associated with this statement
     [[nodiscard]] connection_ref connection() noexcept;
@@ -221,10 +215,10 @@ class [[nodiscard]] auto_reset {
 
 public:
     constexpr auto_reset() noexcept = default;
-    explicit auto_reset(statement & st) noexcept
+    explicit auto_reset(statement& st) noexcept
         : _st(&st) {}
 
-    auto_reset(auto_reset && o) noexcept
+    auto_reset(auto_reset&& o) noexcept
         : _st(neo::take(o._st)) {}
 
     auto_reset& operator=(auto_reset&& o) noexcept {

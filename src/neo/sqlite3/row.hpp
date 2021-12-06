@@ -4,7 +4,14 @@
 
 #include <tuple>
 
+struct sqlite3_stmt;
+
 namespace neo::sqlite3 {
+
+extern "C" namespace c_api {
+    ::sqlite3_value* sqlite3_column_value(::sqlite3_stmt*, int iCol);
+    int              sqlite3_column_count(::sqlite3_stmt*);
+}  // namespace c_api
 
 namespace detail {
 
@@ -21,7 +28,6 @@ struct type_at<I, Head, Tail...> : type_at<I - 1, Tail...> {};
 
 }  // namespace detail
 
-class statement;
 class value_ref;
 
 /**
@@ -33,19 +39,31 @@ template <typename... Ts>
 class typed_row;
 
 class row_access {
-    const statement* _owner;
+    ::sqlite3_stmt* _owner;
+
+    void              _assert_running() const noexcept;
+    [[noreturn]] void _assert_colcount(int idx) const noexcept;
 
 public:
     /// Get access to the results of the given statement.
-    row_access(const statement& o) noexcept
-        : _owner(&o) {}
+    // explicit row_access(const statement& o) noexcept;
+    explicit row_access(::sqlite3_stmt* o) noexcept
+        : _owner(o) {
+        _assert_running();
+    }
 
     /**
      * @brief Obtain the value at the given index (zero-based)
      *
      * @param idx The column index. Left-most is index zero.
      */
-    [[nodiscard]] value_ref operator[](int idx) const noexcept;
+    [[nodiscard]] value_ref operator[](int idx) const noexcept {
+        if (idx >= column_count()) {
+            _assert_colcount(idx);
+        }
+        auto val = c_api::sqlite3_column_value(_owner, idx);
+        return value_ref(val);
+    }
 
     /**
      * @brief Unpack the entire row into a typed tuple.
@@ -54,10 +72,10 @@ public:
      */
     template <typename... Ts>
     [[nodiscard]] typed_row<Ts...> unpack() const {
-        return typed_row<Ts...>{*_owner};
+        return typed_row<Ts...>{_owner};
     }
 
-    [[nodiscard]] int column_count() const noexcept;
+    [[nodiscard]] int column_count() const noexcept { return c_api::sqlite3_column_count(_owner); }
 
     friend constexpr void do_repr(auto out, row_access const* self) noexcept {
         out.type("neo::sqlite3::row_access");
@@ -80,7 +98,7 @@ class typed_row {
     row_access _row;
 
 public:
-    explicit typed_row(const statement& st) noexcept
+    explicit typed_row(::sqlite3_stmt* st) noexcept
         : _row(st) {}
 
     template <std::size_t Idx>

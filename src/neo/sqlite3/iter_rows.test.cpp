@@ -5,12 +5,10 @@
 
 #include "./tests.inl"
 
-#if __has_include(<ranges>)
 #include <ranges>
 
 static_assert(std::ranges::view<neo::sqlite3::iter_rows>);
 static_assert(std::ranges::input_range<neo::sqlite3::iter_rows>);
-#endif
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Basic iteration") {
     db.prepare(R"(

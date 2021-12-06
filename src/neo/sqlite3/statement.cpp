@@ -4,6 +4,7 @@
 #include "./errable.hpp"
 #include "./error.hpp"
 
+#include <neo/assert.hpp>
 #include <neo/event.hpp>
 #include <neo/scope.hpp>
 
@@ -71,6 +72,11 @@ int column_access::count() const noexcept { return ::sqlite3_column_count(OWNER_
 
 std::string_view column::name() const noexcept {
     return ::sqlite3_column_name(OWNER_STMT_PTR, _index);
+}
+
+column column_access::operator[](int idx) const noexcept {
+    neo_assert(expects, idx < count(), "Column index is out-of-range", idx, count());
+    return column{*_owner, idx};
 }
 
 #ifdef SQLITE_ENABLE_COLUMN_METADATA

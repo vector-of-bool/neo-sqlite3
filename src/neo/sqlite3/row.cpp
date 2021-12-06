@@ -7,16 +7,18 @@
 
 using namespace neo::sqlite3;
 
-value_ref row_access::operator[](int idx) const noexcept {
-    auto col_count = column_count();
+void row_access::_assert_running() const noexcept {
     neo_assert(expects,
-               _owner->is_busy(),
+               ::sqlite3_get_autocommit(::sqlite3_db_handle(_owner)) == 1,
                "Attempted to access value from a row in an idle statement. Either `step()` was "
-               "never called, or the statement needs to be `reset()`",
-               idx);
-    neo_assert(expects, idx < col_count, "Access to column beyond-the-end", idx, col_count);
-    auto val = ::sqlite3_column_value(_owner->c_ptr(), idx);
-    return value_ref(val);
+               "never called, or the statement needs to be `reset()`");
 }
 
-int row_access::column_count() const noexcept { return ::sqlite3_column_count(_owner->c_ptr()); }
+void row_access::_assert_colcount(int idx) const noexcept {
+    neo_assert(expects,
+               idx < column_count(),
+               "Access to column beyond-the-end",
+               idx,
+               column_count());
+    std::terminate();
+}

@@ -1,5 +1,7 @@
 #include <neo/sqlite3/statement.hpp>
 
+#include <neo/opt_ref.hpp>
+
 #include "./tests.inl"
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Run a simple statement") {
@@ -78,6 +80,17 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Tuple bind") {
     st.bindings() = tup;
     CHECK(st.step() == neo::sqlite3::statement::more);
     CHECK(st.row().unpack<int, int, std::string_view, double>().as_tuple() == tup);
+}
+
+TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Optional bind") {
+    auto       st = *db.prepare("VALUES (?, ?, ?, ?)");
+    std::tuple tup{1, std::make_optional(2), "string", std::optional<std::string>{}};
+    st.bindings() = tup;
+    CHECK(st.step() == neo::sqlite3::statement::more);
+    CHECK(st.row()
+              .unpack<int, std::optional<int>, std::string_view, std::optional<std::string>>()
+              .as_tuple()
+          == tup);
 }
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Access column information") {

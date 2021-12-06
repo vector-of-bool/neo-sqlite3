@@ -6,12 +6,18 @@
 #include <neo/any_range.hpp>
 #include <neo/memory.hpp>
 
-#if __has_include(<ranges>)
 #include <ranges>
 
 static_assert(std::ranges::view<neo::sqlite3::iter_tuples<int, int>>);
 static_assert(std::ranges::input_range<neo::sqlite3::iter_tuples<int, int>>);
-#endif
+
+struct thing {
+    int         a;
+    int         b;
+    std::string str;
+
+    bool operator==(const thing&) const = default;
+};
 
 TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Iterate over some tuples") {
     db.prepare(R"(
@@ -58,14 +64,6 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Create a transformed-view over some
         .throw_if_error();
     auto st = *db.prepare("SELECT * FROM stuff");
 
-    struct thing {
-        int         a;
-        int         b;
-        std::string str;
-
-        bool operator==(const thing&) const = default;
-    };
-
     auto row_as_thing = [](auto row) {
         auto [a, b, str] = row;
         return thing{a, b, str};
@@ -85,11 +83,11 @@ TEST_CASE_METHOD(sqlite3_memory_db_fixture, "Create a transformed-view over some
     CHECK_FALSE(st.is_busy());
     {
         // Type-erase in view
-        neo::any_input_range view = neo::sqlite3::iter_tuples<int, int, std::string>(st)
-            | std::views::transform([&, rst = neo::copy_shared(st.auto_reset())](auto tup) {
-                                        return row_as_thing(tup);
-                                    });
-        auto it = view.begin();
+        auto rst = neo::copy_shared(st.auto_reset());
+        auto v   = neo::sqlite3::iter_tuples<int, int, std::string>(st)
+            | std::views::transform([&, rst](auto tup) { return row_as_thing(tup); });
+        neo::any_input_range<thing> view(v);
+        auto                        it = view.begin();
         CHECK(*it == thing{1, 2, "string"});
         ++it;
         CHECK(*it == thing{2, 5, "other"});
