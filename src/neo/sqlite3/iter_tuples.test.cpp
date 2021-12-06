@@ -6,12 +6,10 @@
 #include <neo/any_range.hpp>
 #include <neo/memory.hpp>
 
-#if __has_include(<ranges>)
 #include <ranges>
 
 static_assert(std::ranges::view<neo::sqlite3::iter_tuples<int, int>>);
 static_assert(std::ranges::input_range<neo::sqlite3::iter_tuples<int, int>>);
-#endif
 
 struct thing {
     int         a;

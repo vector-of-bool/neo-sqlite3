@@ -87,10 +87,8 @@ public:
 template <>
 constexpr inline bool ranges::v3::enable_view<neo::sqlite3::iter_rows> = true;
 #endif
+#endif
 
-#if __has_include(<ranges>)
 #include <ranges>
 template <>
 constexpr inline bool std::ranges::enable_view<neo::sqlite3::iter_rows> = true;
-#endif
-#endif
