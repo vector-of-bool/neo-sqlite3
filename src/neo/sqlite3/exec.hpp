@@ -148,7 +148,7 @@ one_cell(statement_mutref st, const Args&... args) noexcept requires exec_bind_a
     static_assert(!std::same_as<T, blob_view> && !std::same_as<T, std::string_view>,
                   "View types will be immediately expired before returning from "
                   "neo::sqlite3::one_cell(), and are therefore always undefined behavior.");
-    NEO_SQLITE3_AUTO([v], one_row<T>(st));
+    NEO_SQLITE3_AUTO([v], one_row<T>(st, args...));
     return NEO_FWD(v);
 }
 
